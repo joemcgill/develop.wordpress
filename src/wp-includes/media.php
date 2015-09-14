@@ -337,7 +337,14 @@ function get_image_tag( $id, $alt, $title, $align, $size = 'medium' ) {
 	 */
 	$class = apply_filters( 'get_image_tag_class', $class, $id, $align, $size );
 
-	$html = '<img src="' . esc_attr($img_src) . '" alt="' . esc_attr($alt) . '" ' . $title . $hwstring . 'class="' . $class . '" />';
+	// Add `srcset` and `sizes` attributes.
+	$srcset = $sizes = '';
+	if ( $srcset = wp_attachment_img_srcset( $id, $size ) ) {
+		$srcset = ' srcset="' . $srcset . '"';
+		$sizes = ' sizes="(min-width: ' . $width . 'px) 100vw, ' . $width . 'px"';
+	}
+
+	$html = '<img src="' . esc_attr($img_src) . '"' . $srcset . $sizes . ' alt="' . esc_attr($alt) . '" ' . $title . $hwstring . 'class="' . $class . '" />';
 
 	/**
 	 * Filter the HTML content for the image tag.
