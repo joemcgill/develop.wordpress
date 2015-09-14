@@ -838,17 +838,19 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	}
 
 	// Build an array with image sizes.
-	$img_sizes = $img_meta['sizes'];
+	$img_sizes = isset( $img_meta['sizes'] ) ? $img_meta['sizes'] : array();
 
 	// Add full size to the img_sizes array.
-	$img_sizes['full'] = array(
-		'width'  => $img_meta['width'],
-		'height' => $img_meta['height'],
-		'file'   => $img_meta['file']
-	);
+	if ( isset( $img_meta['file'] ) ) {
+		$img_sizes['full'] = array(
+			'width'  => $img_meta['width'],
+			'height' => $img_meta['height'],
+			'file'   => $img_meta['file']
+		);
 
-	if ( strrpos( $img_meta['file'], '/' ) !== false ) {
-		$img_sizes['full']['file'] = substr( $img_meta['file'], strrpos( $img_meta['file'], '/' ) + 1 );
+		if ( strrpos( $img_meta['file'], '/' ) !== false ) {
+			$img_sizes['full']['file'] = substr( $img_meta['file'], strrpos( $img_meta['file'], '/' ) + 1 );
+		}
 	}
 
 	// Get the image base url.
