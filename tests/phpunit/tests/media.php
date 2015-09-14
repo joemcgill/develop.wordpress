@@ -795,7 +795,7 @@ EOF;
 		// Start by getting the attachment metadata.
 		$meta = wp_get_attachment_metadata( $id );
 
-		// Mimick hash generation method used in wp_save_image().
+		// Copy hash generation method used in wp_save_image().
 		$hash = 'e' . time() . rand(100, 999);
 
 		// Replace file paths for full and medium sizes with hashed versions.
