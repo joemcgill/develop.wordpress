@@ -724,17 +724,7 @@ EOF;
 	 */
 	function test_wp_attachment_img_srcset_array() {
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$contents = file_get_contents($filename);
-		$upload = wp_upload_bits(basename($filename), null, $contents);
-
-		// Make an image.
-		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
-			'post_mime_type' => 'image/jpeg',
-			'post_type' => 'attachment'
-		) );
-		// Generate metadata.
-		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
-
+		$id = $this->factory->attachement->create_upload_object( $filename );
 		$sizes = wp_attachment_img_srcset_array( $id, 'medium' );
 
 		$year_month = date('Y/m');
@@ -763,17 +753,7 @@ EOF;
 
 		// make an image
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$contents = file_get_contents($filename);
-		$upload = wp_upload_bits(basename($filename), null, $contents);
-
-		// Make an image.
-		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
-			'post_mime_type' => 'image/jpeg',
-			'post_type' => 'attachment'
-		) );
-		// Generate metadata.
-		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
-
+		$id = $this->factory->attachement->create_upload_object( $filename );
 		$sizes = wp_attachment_img_srcset_array( $id, 'medium' );
 
 		$image = wp_get_attachment_metadata( $id );
@@ -796,17 +776,7 @@ EOF;
 	function test_wp_attachment_img_srcset_array_single_srcset() {
 		// make an image
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$contents = file_get_contents($filename);
-		$upload = wp_upload_bits(basename($filename), null, $contents);
-
-		// Make an image.
-		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
-			'post_mime_type' => 'image/jpeg',
-			'post_type' => 'attachment'
-		) );
-		// Generate metadata.
-		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
-
+		$id = $this->factory->attachement->create_upload_object( $filename );
 		// In our tests, thumbnails would only return a single srcset candidate,
 		// in which case we don't bother returning a srcset array.
 		$sizes = wp_attachment_img_srcset_array( $id, 'thumbnail' );
@@ -820,17 +790,7 @@ EOF;
 	function test_wp_attachment_img_srcset_array_with_edits() {
 		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$contents = file_get_contents($filename);
-		$upload = wp_upload_bits(basename($filename), null, $contents);
-
-		// Make an image.
-		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
-			'post_mime_type' => 'image/jpeg',
-			'post_type' => 'attachment'
-		) );
-		// Generate metadata.
-		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
-
+		$id = $this->factory->attachement->create_upload_object( $filename );
 		// For this test we're going to mock metadata changes from an edit.
 		// Start by getting the attachment metadata.
 		$meta = wp_get_attachment_metadata( $id );
@@ -864,17 +824,7 @@ EOF;
 	function test_wp_attachment_img_srcset_array_false() {
 		// make an image
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$contents = file_get_contents($filename);
-		$upload = wp_upload_bits(basename($filename), null, $contents);
-
-		// Make an image.
-		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
-			'post_mime_type' => 'image/jpeg',
-			'post_type' => 'attachment'
-		) );
-		// Generate metadata.
-		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
-
+		$id = $this->factory->attachement->create_upload_object( $filename );
 		$sizes = wp_attachment_img_srcset_array( 99999, 'foo' );
 
 		// For canola.jpg we should return
@@ -890,17 +840,7 @@ EOF;
 
 		// Make our attachement.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$contents = file_get_contents($filename);
-		$upload = wp_upload_bits(basename($filename), null, $contents);
-
-		// Make an image.
-		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
-			'post_mime_type' => 'image/jpeg',
-			'post_type' => 'attachment'
-		) );
-		// Generate metadata.
-		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
-
+		$id = $this->factory->attachement->create_upload_object( $filename );
 		$srcset = wp_attachment_img_srcset_array( $id, 'medium' );
 
 		// The srcset should be false
@@ -923,17 +863,7 @@ EOF;
 	function test_wp_attachment_img_srcset() {
 		// make an image
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$contents = file_get_contents($filename);
-		$upload = wp_upload_bits(basename($filename), null, $contents);
-
-		// Make an image.
-		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
-			'post_mime_type' => 'image/jpeg',
-			'post_type' => 'attachment'
-		) );
-		// Generate metadata.
-		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
-
+		$id = $this->factory->attachement->create_upload_object( $filename );
 		$sizes = wp_attachment_img_srcset( $id, 'full-size' );
 
 		$image = wp_get_attachment_metadata( $id );
