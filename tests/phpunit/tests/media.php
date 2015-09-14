@@ -737,4 +737,233 @@ EOF;
 
 		$this->assertEquals( $image[0], wp_get_attachment_image_url( $attachment_id ) );
 	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset_array() {
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$contents = file_get_contents($filename);
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+
+		// Make an image.
+		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
+			'post_mime_type' => 'image/jpeg',
+			'post_type' => 'attachment'
+		) );
+		// Generate metadata.
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
+
+		$sizes = wp_attachment_img_srcset_array( $id, 'medium' );
+
+		$year_month = date('Y/m');
+		$image = wp_get_attachment_metadata( $id );
+
+		$expected = array(
+		 $image['sizes']['medium']['width'] => 'http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
+			 . $image['sizes']['medium']['file'] . ' ' . $image['sizes']['medium']['width'] . 'w',
+		 $image['sizes']['large']['width'] => 'http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
+			 . $image['sizes']['large']['file'] . ' ' . $image['sizes']['large']['width'] . 'w',
+		 $image['width'] => 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w'
+		);
+
+		$this->assertSame( $expected, $sizes );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset_array_no_date_upoads() {
+		// Save the current setting for uploads folders
+		$uploads_use_yearmonth_folders = get_option( 'uploads_use_yearmonth_folders' );
+
+		// Disable date organized uploads
+		update_option( 'uploads_use_yearmonth_folders', 0 );
+
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$contents = file_get_contents($filename);
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+
+		// Make an image.
+		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
+			'post_mime_type' => 'image/jpeg',
+			'post_type' => 'attachment'
+		) );
+		// Generate metadata.
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
+
+		$sizes = wp_attachment_img_srcset_array( $id, 'medium' );
+
+		$image = wp_get_attachment_metadata( $id );
+
+		$expected = array(
+			$image['sizes']['medium']['width'] => 'http://example.org/wp-content/uploads/' . $image['sizes']['medium']['file'] . ' ' . $image['sizes']['medium']['width'] . 'w',
+			$image['sizes']['large']['width'] => 'http://example.org/wp-content/uploads/' . $image['sizes']['large']['file'] . ' ' . $image['sizes']['large']['width'] . 'w',
+			$image['width'] => 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w'
+		);
+
+		$this->assertSame( $expected, $sizes );
+
+		// Leave the uploads option the way you found it.
+		update_option( 'uploads_use_yearmonth_folders', $uploads_use_yearmonth_folders );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset_array_single_srcset() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$contents = file_get_contents($filename);
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+
+		// Make an image.
+		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
+			'post_mime_type' => 'image/jpeg',
+			'post_type' => 'attachment'
+		) );
+		// Generate metadata.
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
+
+		// In our tests, thumbnails would only return a single srcset candidate,
+		// in which case we don't bother returning a srcset array.
+		$sizes = wp_attachment_img_srcset_array( $id, 'thumbnail' );
+
+		$this->assertFalse( $sizes );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset_array_with_edits() {
+		// Make an image.
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$contents = file_get_contents($filename);
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+
+		// Make an image.
+		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
+			'post_mime_type' => 'image/jpeg',
+			'post_type' => 'attachment'
+		) );
+		// Generate metadata.
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
+
+		// For this test we're going to mock metadata changes from an edit.
+		// Start by getting the attachment metadata.
+		$meta = wp_get_attachment_metadata( $id );
+
+		// Mimick hash generation method used in wp_save_image().
+		$hash = 'e' . time() . rand(100, 999);
+
+		// Replace file paths for full and medium sizes with hashed versions.
+		$filename_base = basename( $meta['file'], '.png' );
+		$meta['file'] = str_replace( $filename_base, $filename_base . '-' . $hash, $meta['file'] );
+		$meta['sizes']['medium']['file'] = str_replace( $filename_base, $filename_base . '-' . $hash, $meta['sizes']['medium']['file'] );
+
+		// Save edited metadata.
+		wp_update_attachment_metadata( $id, $meta );
+
+		// Get the edited image and observe that a hash was created.
+		$img_url = wp_get_attachment_url( $id );
+
+		// Calculate a srcset array.
+		$sizes = wp_attachment_img_srcset_array( $id, 'medium' );
+
+		// Test to confirm all sources in the array include the same edit hash.
+		foreach ( $sizes as $size ) {
+			$this->assertTrue( false !== strpos( $size, $hash ) );
+		}
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset_array_false() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$contents = file_get_contents($filename);
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+
+		// Make an image.
+		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
+			'post_mime_type' => 'image/jpeg',
+			'post_type' => 'attachment'
+		) );
+		// Generate metadata.
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
+
+		$sizes = wp_attachment_img_srcset_array( 99999, 'foo' );
+
+		// For canola.jpg we should return
+		$this->assertFalse( $sizes );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset_array_no_width() {
+		// Filter image_downsize() output.
+		add_filter( 'image_downsize', array( $this, '_test_wp_attachment_img_srcset_array_no_width_filter' ) );
+
+		// Make our attachement.
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$contents = file_get_contents($filename);
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+
+		// Make an image.
+		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
+			'post_mime_type' => 'image/jpeg',
+			'post_type' => 'attachment'
+		) );
+		// Generate metadata.
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
+
+		$srcset = wp_attachment_img_srcset_array( $id, 'medium' );
+
+		// The srcset should be false
+		$this->assertFalse( $srcset );
+
+		// Remove filter.
+		remove_filter( 'image_downsize', array( $this, '_test_wp_attachment_img_srcset_array_no_width_filter' ) );
+	}
+
+	/**
+	 * Helper funtion to filter image_downsize and return zero values for width and height.
+	 */
+	public function _test_wp_attachment_img_srcset_array_no_width_filter() {
+		return array( 'http://example.org/foo.jpg', 0, 0, false );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$contents = file_get_contents($filename);
+		$upload = wp_upload_bits(basename($filename), null, $contents);
+
+		// Make an image.
+		$id = $this->factory->attachment->create_object( $upload[ 'file' ], 0, array(
+			'post_mime_type' => 'image/jpeg',
+			'post_type' => 'attachment'
+		) );
+		// Generate metadata.
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload[ 'file' ] ) );
+
+		$sizes = wp_attachment_img_srcset( $id, 'full-size' );
+
+		$image = wp_get_attachment_metadata( $id );
+		$year_month = date('Y/m');
+
+		$expected = 'http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
+			. $image['sizes']['medium']['file'] . ' ' . $image['sizes']['medium']['width'] . 'w, ';
+		$expected .='http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
+			. $image['sizes']['large']['file'] . ' ' . $image['sizes']['large']['width'] . 'w, ';
+		$expected .= 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w';
+
+		$this->assertSame( $expected, $sizes );
+	}
 }
