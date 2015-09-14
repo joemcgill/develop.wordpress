@@ -96,6 +96,9 @@ class WP_UnitTest_Factory_For_Attachment extends WP_UnitTest_Factory_For_Post {
 	}
 
 	function create_upload_object( $file, $parent = 0 ) {
+		$contents = file_get_contents($file);
+		$upload = wp_upload_bits(basename($file), null, $contents);
+
 		$type = '';
 		if ( ! empty($upload['type']) ) {
 			$type = $upload['type'];
@@ -109,13 +112,13 @@ class WP_UnitTest_Factory_For_Attachment extends WP_UnitTest_Factory_For_Post {
 			'post_title' => basename( $upload['file'] ),
 			'post_content' => '',
 			'post_type' => 'attachment',
-			'post_parent' => $parent_post_id,
+			'post_parent' => $parent,
 			'post_mime_type' => $type,
 			'guid' => $upload[ 'url' ],
 		);
 
 		// Save the data
-		$id = wp_insert_attachment( $attachment, $upload[ 'file' ], $parent_post_id );
+		$id = wp_insert_attachment( $attachment, $upload[ 'file' ], $parent );
 		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $upload['file'] ) );
 
 		return $id;
