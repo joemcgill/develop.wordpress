@@ -344,7 +344,7 @@ function get_image_tag( $id, $alt, $title, $align, $size = 'medium' ) {
 		$sizes = ' sizes="(min-width: ' . $width . 'px) 100vw, ' . $width . 'px"';
 	}
 
-	$html = '<img src="' . esc_attr($img_src) . '"' . $srcset . $sizes . ' alt="' . esc_attr($alt) . '" ' . $title . $hwstring . 'class="' . $class . '" />';
+	$html = '<img src="' . esc_attr($img_src) . '"' . esc_attr( $srcset ) . esc_attr( $sizes ) . ' alt="' . esc_attr($alt) . '" ' . $title . $hwstring . 'class="' . $class . '" />';
 
 	/**
 	 * Filter the HTML content for the image tag.
