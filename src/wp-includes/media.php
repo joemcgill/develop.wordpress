@@ -814,8 +814,8 @@ function wp_get_attachment_image($attachment_id, $size = 'thumbnail', $icon = fa
  *
  * @since 4.4.0
  *
- * @param int    $id   Image attachment ID.
- * @param string $size Optional. Name of image size. Default value: 'thumbnail'.
+ * @param  int    $id   Image attachment ID.
+ * @param  string $size Optional. Name of image size. Default value: 'medium'.
  * @return array|bool  An array of of srcset values or false.
  */
 function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
@@ -827,8 +827,8 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	// Break image data into url, width, and height.
 	list( $img_url, $img_width, $img_height ) = $img;
 
-	// If we have no width to work with, we should bail (see issue #118).
-	if ( 0 == $img_width ) {
+	// Bail early If we have no width or if the width set to zero.
+	if ( ! $img_width > 0 ) {
 		return false;
 	}
 
@@ -859,19 +859,20 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	// Calculate the image aspect ratio.
 	$img_ratio = $img_height / $img_width;
 
-	// Images that have been edited in WordPres after being uploaded will
+	// Images that have been edited in WordPress after being uploaded will
 	// contain a unique hash. We look for that hash and use it later to filter
-	// out images that are left overs from previous renditions.
+	// out images that are left over from previous versions.
+	// @see `wp_restore_image()`
 	$img_edited = preg_match( '/-e[0-9]{13}/', $img_url, $img_edit_hash );
 
 	// Set up the array of sources.
 	$sources = array();
 
-	// Loop through available images and only use images that are resized
-	// versions of the same rendition.
+	// Loop through all available image sizes and filter out any with a
+	// different aspect ratio (crops) or are from a different edited version.
 	foreach ( $img_sizes as $img ) {
 
-		// Filter out images that are leftovers from previous renditions.
+		// Filter out images that are left over from previously edited versions.
 		if ( $img_edited && ! strpos( $img['file'], $img_edit_hash[0] ) ) {
 			continue;
 		}
