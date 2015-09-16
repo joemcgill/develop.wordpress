@@ -839,7 +839,7 @@ function wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon
  *
  * @param  int    $id   Image attachment ID.
  * @param  string $size Optional. Name of image size. Default value: 'medium'.
- * @return array|bool  An array of of srcset values or false.
+ * @return array|bool  An array of image urls and widths or false on failure.
  */
 function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	// See which image is being returned and bail if none is found.
@@ -919,7 +919,7 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	 *
 	 * @since 4.4.0
 	 *
-	 * @param array        $sources  An array of image sources.
+	 * @param array        $sources  An array of image urls and widths.
 	 * @param int          $id       Attachment ID for image.
 	 * @param array|string $size     Size of image, either array or string.
 	 */
