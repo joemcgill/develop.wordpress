@@ -340,8 +340,8 @@ function get_image_tag( $id, $alt, $title, $align, $size = 'medium' ) {
 	// Add `srcset` and `sizes` attributes.
 	$srcset = $sizes = '';
 	if ( $srcset = wp_attachment_img_srcset( $id, $size ) ) {
-		$srcset = ' srcset="' . $srcset . '"';
-		$sizes = ' sizes="(min-width: ' . $width . 'px) 100vw, ' . $width . 'px"';
+		$srcset = ' srcset="' . esc_attr( $srcset ) . '"';
+		$sizes = ' sizes="(min-width: ' . esc_attr( $width ) . 'px) 100vw, ' . esc_attr( $width ) . 'px"';
 	}
 
 	$html = '<img src="' . esc_attr($img_src) . '"' . $srcset . $sizes . ' alt="' . esc_attr($alt) . '" ' . $title . $hwstring . 'class="' . $class . '" />';
