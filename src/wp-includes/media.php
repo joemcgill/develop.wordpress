@@ -883,7 +883,7 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	// contain a unique hash. We look for that hash and use it later to filter
 	// out images that are left over from previous versions.
 	// @see `wp_restore_image()`
-	$img_edited = preg_match( '/-e[0-9]{13}/', $img_url, $img_edit_hash );
+	$img_is_edited = preg_match( '/-e[0-9]{13}/', $img_url, $img_edit_hash );
 
 	// Set up the array of sources.
 	$sources = array();
@@ -893,7 +893,7 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	foreach ( $img_sizes as $img ) {
 
 		// Filter out images that are left over from previously edited versions.
-		if ( $img_edited && ! strpos( $img['file'], $img_edit_hash[0] ) ) {
+		if ( $img_is_edited && ! strpos( $img['file'], $img_edit_hash[0] ) ) {
 			continue;
 		}
 
