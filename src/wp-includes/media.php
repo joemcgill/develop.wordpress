@@ -876,9 +876,6 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 		}
 	}
 
-	// Get the image base url.
-	$img_base_url = substr( $img_url, 0, strrpos( $img_url, '/' ) + 1 );
-
 	// Calculate the image aspect ratio.
 	$img_ratio = $img_height / $img_width;
 
@@ -905,7 +902,7 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 
 		// If the new ratio differs by less than 0.01, use it.
 		if ( abs( $img_ratio - $img_ratio_compare ) < 0.01 ) {
-			$sources[ $img['width'] ] = $img_base_url . $img['file'] . ' ' . $img['width'] .'w';
+			$sources[ $img['width'] ] = path_join( dirname( $img_url ), $img['file'] ) . ' ' . $img['width'] .'w';
 		}
 	}
 
