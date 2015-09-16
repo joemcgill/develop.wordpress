@@ -832,7 +832,8 @@ function wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon
 }
 
 /**
- * Get an array of image sources candidates for use in a 'srcset' attribute.
+ * Return an array of urls and pixel widths representing sizes of an image for
+ * the purpose of populating a source set when creating responsive image markup.
  *
  * @since 4.4.0
  *
