@@ -796,20 +796,6 @@ EOF;
 	/**
 	 * @ticket 33641
 	 */
-	function test_wp_attachment_img_srcset_array_single_srcset() {
-		// make an image
-		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$id = $this->factory->attachment->create_upload_object( $filename );
-		// In our tests, thumbnails would only return a single srcset candidate,
-		// in which case we don't bother returning a srcset array.
-		$sizes = wp_attachment_img_srcset_array( $id, 'thumbnail' );
-
-		$this->assertFalse( $sizes );
-	}
-
-	/**
-	 * @ticket 33641
-	 */
 	function test_wp_attachment_img_srcset_array_with_edits() {
 		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
@@ -894,10 +880,24 @@ EOF;
 
 		$expected = 'http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
 			. $image['sizes']['medium']['file'] . ' ' . $image['sizes']['medium']['width'] . 'w, ';
-		$expected .='http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
+		$expected .= 'http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
 			. $image['sizes']['large']['file'] . ' ' . $image['sizes']['large']['width'] . 'w, ';
 		$expected .= 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w';
 
 		$this->assertSame( $expected, $sizes );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_srcset_single_srcset() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$id = $this->factory->attachment->create_upload_object( $filename );
+		// In our tests, thumbnails will only return a single srcset candidate,
+		// so we shouldn't return a srcset value in order to avoid unneeded markup.
+		$sizes = wp_attachment_img_srcset( $id, 'thumbnail' );
+
+		$this->assertFalse( $sizes );
 	}
 }

@@ -902,11 +902,6 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 		}
 	}
 
-	// Only return sources if there are more than one.
-	if ( count( $sources ) <= 1 ) {
-		return false;
-	}
-
 	/**
 	 * Filter the output of wp_get_srcset_array().
 	 *
@@ -925,13 +920,14 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
  * @since 4.4.0
  *
  * @param int    $id   Image attachment ID.
- * @param string $size Optional. Name of image size. Default value: 'thumbnail'.
+ * @param string $size Optional. Name of image size. Default value: 'medium'.
  * @return string|bool A 'srcset' value string or false.
  */
-function wp_attachment_img_srcset( $id, $size = 'thumbnail' ) {
+function wp_attachment_img_srcset( $id, $size = 'medium' ) {
 	$srcset_array = wp_attachment_img_srcset_array( $id, $size );
 
-	if ( empty( $srcset_array ) ) {
+	// Only return a srcset value if there is more than one source.
+	if ( count( $srcset_array ) <= 1 ) {
 		return false;
 	}
 
