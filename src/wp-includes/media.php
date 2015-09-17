@@ -868,12 +868,8 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 		$img_sizes['full'] = array(
 			'width'  => $img_meta['width'],
 			'height' => $img_meta['height'],
-			'file'   => $img_meta['file']
+			'file'   => basename( $img_meta['file'] )
 		);
-
-		if ( strrpos( $img_meta['file'], '/' ) !== false ) {
-			$img_sizes['full']['file'] = substr( $img_meta['file'], strrpos( $img_meta['file'], '/' ) + 1 );
-		}
 	}
 
 	// Calculate the image aspect ratio.
