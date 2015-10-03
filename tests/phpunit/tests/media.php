@@ -725,6 +725,8 @@ EOF;
 		remove_filter( 'embed_maybe_make_link', array( $this, 'filter_wp_embed_shortcode_custom' ), 10 );
 	}
 
+/* === START === */
+
 	/**
 	 * @ticket 33878
 	 */
@@ -748,7 +750,6 @@ EOF;
 	function test_wp_attachment_img_srcset_array() {
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
-		$sizes = wp_attachment_img_srcset_array( $id, 'medium' );
 
 		$year_month = date('Y/m');
 		$image = wp_get_attachment_metadata( $id );
@@ -761,7 +762,12 @@ EOF;
 		 $image['width'] => 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w'
 		);
 
-		$this->assertSame( $expected, $sizes );
+		// Set up test cases for all expected size names and a random one.
+		$sizes = array( 'medium', 'large', 'full', 'yoav' );
+
+		foreach ( $sizes as $size ) {
+			$this->assertSame( $expected, wp_attachment_img_srcset_array( $id, $size ) );
+		}
 	}
 
 	/**
@@ -777,7 +783,6 @@ EOF;
 		// make an image
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
-		$sizes = wp_attachment_img_srcset_array( $id, 'medium' );
 
 		$image = wp_get_attachment_metadata( $id );
 
@@ -787,7 +792,12 @@ EOF;
 			$image['width'] => 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w'
 		);
 
-		$this->assertSame( $expected, $sizes );
+		// Set up test cases for all expected size names and a random one.
+		$sizes = array( 'medium', 'large', 'full', 'yoav' );
+
+		foreach ( $sizes as $size ) {
+			$this->assertSame( $expected, wp_attachment_img_srcset_array( $id, $size ) );
+		}
 
 		// Leave the uploads option the way you found it.
 		update_option( 'uploads_use_yearmonth_folders', $uploads_use_yearmonth_folders );
@@ -845,9 +855,9 @@ EOF;
 	 */
 	function test_wp_attachment_img_srcset_array_no_width() {
 		// Filter image_downsize() output.
-		add_filter( 'image_downsize', array( $this, '_test_wp_attachment_img_srcset_array_no_width_filter' ) );
+		add_filter( 'wp_generate_attachment_metadata', array( $this, '_test_wp_attachment_img_srcset_array_no_width_filter' ) );
 
-		// Make our attachement.
+		// Make our attachment.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 		$srcset = wp_attachment_img_srcset_array( $id, 'medium' );
@@ -856,14 +866,16 @@ EOF;
 		$this->assertFalse( $srcset );
 
 		// Remove filter.
-		remove_filter( 'image_downsize', array( $this, '_test_wp_attachment_img_srcset_array_no_width_filter' ) );
+		remove_filter( 'wp_generate_attachment_metadata', array( $this, '_test_wp_attachment_img_srcset_array_no_width_filter' ) );
 	}
 
 	/**
 	 * Helper funtion to filter image_downsize and return zero values for width and height.
 	 */
-	public function _test_wp_attachment_img_srcset_array_no_width_filter() {
-		return array( 'http://example.org/foo.jpg', 0, 0, false );
+	public function _test_wp_attachment_img_srcset_array_no_width_filter( $meta ) {
+		$meta['sizes']['medium']['width'] = 0;
+		$meta['sizes']['medium']['height'] = 0;
+		return $meta;
 	}
 
 	/**
@@ -899,5 +911,168 @@ EOF;
 		$sizes = wp_attachment_img_srcset( $id, 'thumbnail' );
 
 		$this->assertFalse( $sizes );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_tevkori_filter_content_images_with_preexisting_srcset() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$id = $this->factory->attachment->create_upload_object( $filename );
+
+		// Generate HTML and add a dummy srcset attribute.
+		$image_html = get_image_tag( $id, '', '', '', 'medium' );
+		$image_html = preg_replace('|<img ([^>]+) />|', '<img $1 ' . 'srcset="image2x.jpg 2x" />', $image_html );
+
+		// The content filter should return the image unchanged.
+		$this->assertSame( $image_html, wp_resp_img( $image_html ) );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_sizes() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$id = $this->factory->attachment->create_upload_object( $filename );
+
+
+		global $content_width;
+
+		// test sizes against the default WP sizes
+		$intermediates = array('thumbnail', 'medium', 'large');
+
+		foreach( $intermediates as $int ) {
+			$width = get_option( $int . '_size_w' );
+
+			// the sizes width gets constrained to $content_width by default
+			if ( $content_width > 0 ) {
+				$width = ( $width > $content_width ) ? $content_width : $width;
+			}
+
+			$expected = '(max-width: ' . $width . 'px) 100vw, ' . $width . 'px';
+			$sizes = wp_attachment_img_sizes( $id, $int );
+
+			$this->assertSame($expected, $sizes);
+		}
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_attachment_img_sizes_with_args() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$id = $this->factory->attachment->create_upload_object( $filename );
+
+
+		$args = array(
+			'sizes' => array(
+				array(
+					'size_value' 	=> '10em',
+					'mq_value'		=> '60em',
+					'mq_name'			=> 'min-width'
+				),
+				array(
+					'size_value' 	=> '20em',
+					'mq_value'		=> '30em',
+					'mq_name'			=> 'min-width'
+				),
+				array(
+					'size_value'	=> 'calc(100vm - 30px)'
+				),
+			)
+		);
+
+		$expected = '(min-width: 60em) 10em, (min-width: 30em) 20em, calc(100vm - 30px)';
+		$sizes = wp_attachment_img_sizes( $id, 'medium', $args );
+
+		$this->assertSame($expected, $sizes);
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_filter_wp_attachment_img_sizes() {
+		// Add our test filter.
+		add_filter( 'wp_image_sizes_args', array( $this, '_test_wp_image_sizes_args' ) );
+
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$id = $this->factory->attachment->create_upload_object( $filename );
+
+		$sizes = wp_attachment_img_sizes($id, 'medium');
+
+		// Evaluate that the sizes returned is what we expected.
+		$this->assertSame( $sizes, '100vm');
+
+		remove_filter( 'wp_image_sizes_args', array( $this, '_test_wp_image_sizes_args' ) );
+	}
+
+	/**
+	 * A simple test filter for wp_attachment_img_sizes().
+	 */
+	function _test_wp_image_sizes_args( $args ) {
+		$args['sizes'] = "100vm";
+		return $args;
+	}
+
+	/**
+	 * @ticket 33641
+	 * @group failing
+	 */
+	function test_tevkori_filter_content_images() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$id = $this->factory->attachment->create_upload_object( $filename );
+
+		$srcset = sprintf( 'srcset="%s"', wp_attachment_img_srcset( $id, 'medium' ) );
+		$sizes = sprintf( 'sizes="%s"', wp_attachment_img_sizes( $id, 'medium' ) );
+
+		// Function used to build HTML for the editor.
+		$img = get_image_tag( $id, '', '', '', 'medium' );
+		$img_no_size = str_replace( 'size-', '', $img );
+		$img_no_size_id = str_replace( 'wp-image-', 'id-', $img_no_size );
+
+		var_dump( $img );
+
+		// Manually add srcset and sizes to the markup from get_image_tag();
+		$respimg = preg_replace('|<img ([^>]+) />|', '<img $1 ' . $srcset . ' ' . $sizes . ' />', $img);
+		$respimg_no_size = preg_replace('|<img ([^>]+) />|', '<img $1 ' . $srcset . ' ' . $sizes . ' />', $img_no_size);
+
+		$content = '<p>Welcome to WordPress!  This post contains important information.  After you read it, you can make it private to hide it from visitors but still have the information handy for future reference.</p>
+			<p>First things first:</p>
+
+			%1$s
+
+			<ul>
+			<li><a href="http://wordpress.org" title="Subscribe to the WordPress mailing list for Release Notifications">Subscribe to the WordPress mailing list for release notifications</a></li>
+			</ul>
+
+			%2$s
+
+			<p>As a subscriber, you will receive an email every time an update is available (and only then).  This will make it easier to keep your site up to date, and secure from evildoers.<br />
+			When a new version is released, <a href="http://wordpress.org" title="If you are already logged in, this will take you directly to the Dashboard">log in to the Dashboard</a> and follow the instructions.<br />
+			Upgrading is a couple of clicks!</p>
+
+			%3$s
+
+			<p>Then you can start enjoying the WordPress experience:</p>
+			<ul>
+			<li>Edit your personal information at <a href="http://wordpress.org" title="Edit settings like your password, your display name and your contact information">Users &#8250; Your Profile</a></li>
+			<li>Start publishing at <a href="http://wordpress.org" title="Create a new post">Posts &#8250; Add New</a> and at <a href="http://wordpress.org" title="Create a new page">Pages &#8250; Add New</a></li>
+			<li>Browse and install plugins at <a href="http://wordpress.org" title="Browse and install plugins at the official WordPress repository directly from your Dashboard">Plugins &#8250; Add New</a></li>
+			<li>Browse and install themes at <a href="http://wordpress.org" title="Browse and install themes at the official WordPress repository directly from your Dashboard">Appearance &#8250; Add New Themes</a></li>
+			<li>Modify and prettify your website&#8217;s links at <a href="http://wordpress.org" title="For example, select a link structure like: http://example.com/1999/12/post-name">Settings &#8250; Permalinks</a></li>
+			<li>Import content from another system or WordPress site at <a href="http://wordpress.org" title="WordPress comes with importers for the most common publishing systems">Tools &#8250; Import</a></li>
+			<li>Find answers to your questions at the <a href="http://wordpress.orgs" title="The official WordPress documentation, maintained by the WordPress community">WordPress Codex</a></li>
+			</ul>';
+
+		$content_unfiltered = sprintf( $content, $img, $img_no_size, $img_no_size_id );
+		$content_filtered = sprintf( $content, $respimg, $respimg_no_size, $img_no_size_id );
+
+		var_dump( $content_filtered );
+		$this->assertSame( $content_filtered, wp_resp_img( $content_unfiltered ) );
 	}
 }
