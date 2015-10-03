@@ -18,7 +18,7 @@ CAP;
 		$this->img_name = 'image.jpg';
 		$this->img_url = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . $this->img_name;
 		$this->img_html = '<img src="' . $this->img_url . '"/>';
-		$this->img_dimensions = array( 'width' => 100, 'height' => 100 );
+		$this->img_meta = array( 'width' => 100, 'height' => 100, 'sizes' => '' );
 	}
 
 	function test_img_caption_shortcode_added() {
@@ -288,7 +288,8 @@ EOF;
 				'post_mime_type' => 'image/jpeg',
 				'post_type' => 'attachment'
 			) );
-			wp_update_attachment_metadata( $attachment_id, $this->img_dimensions );
+			$metadata = array_merge( array( "file" => "image$i.jpg" ), $this->img_meta );
+			wp_update_attachment_metadata( $attachment_id, $metadata );
 			$ids1[] = $attachment_id;
 			$ids1_srcs[] = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . "image$i.jpg";
 		}
@@ -300,7 +301,8 @@ EOF;
 				'post_mime_type' => 'image/jpeg',
 				'post_type' => 'attachment'
 			) );
-			wp_update_attachment_metadata( $attachment_id, $this->img_dimensions );
+			$metadata = array_merge( array( "file" => "image$i.jpg" ), $this->img_meta );
+			wp_update_attachment_metadata( $attachment_id, $metadata );
 			$ids2[] = $attachment_id;
 			$ids2_srcs[] = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . "image$i.jpg";
 		}
@@ -329,7 +331,8 @@ BLOB;
 				'post_mime_type' => 'image/jpeg',
 				'post_type' => 'attachment'
 			) );
-			wp_update_attachment_metadata( $attachment_id, $this->img_dimensions );
+			$metadata = array_merge( array( "file" => "image$i.jpg" ), $this->img_meta );
+			wp_update_attachment_metadata( $attachment_id, $metadata );
 			$ids1[] = $attachment_id;
 			$ids1_srcs[] = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . "image$i.jpg";
 		}
@@ -341,7 +344,8 @@ BLOB;
 				'post_mime_type' => 'image/jpeg',
 				'post_type' => 'attachment'
 			) );
-			wp_update_attachment_metadata( $attachment_id, $this->img_dimensions );
+			$metadata = array_merge( array( "file" => "image$i.jpg" ), $this->img_meta );
+			wp_update_attachment_metadata( $attachment_id, $metadata );
 			$ids2[] = $attachment_id;
 			$ids2_srcs[] = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . "image$i.jpg";
 		}
