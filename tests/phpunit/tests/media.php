@@ -729,8 +729,6 @@ EOF;
 		remove_filter( 'embed_maybe_make_link', array( $this, 'filter_wp_embed_shortcode_custom' ), 10 );
 	}
 
-/* === START === */
-
 	/**
 	 * @ticket 33878
 	 */
