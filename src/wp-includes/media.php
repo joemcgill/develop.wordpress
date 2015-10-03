@@ -932,7 +932,7 @@ function wp_get_attachment_image_srcset_array( $id, $size = 'medium' ) {
 	 * @param int          $id       Attachment ID for image.
 	 * @param array|string $size     Size of image, either array or string.
 	 */
-	return apply_filters( 'wp_get_attachment_image_srcset', $sources, $id, $size );
+	return apply_filters( 'wp_get_attachment_image_srcset_array', $sources, $id, $size );
 }
 
 /**
@@ -957,7 +957,16 @@ function wp_get_attachment_image_srcset( $id, $size = 'medium' ) {
 		}
 	}
 
-	return rtrim( $srcset, ', ');
+	/**
+	 * Filter the output of wp_get_srcset_array().
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param string       $srcset  A source set formated for a `srcset` attribute.
+	 * @param int          $id      Attachment ID for image.
+	 * @param array|string $size    Size of image, either array or string.
+	 */
+	return apply_filters( 'wp_get_attachment_image_srcset', rtrim( $srcset, ', ' ), $id, $size );
 }
 
 /**
