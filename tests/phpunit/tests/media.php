@@ -759,11 +759,21 @@ EOF;
 		$image = wp_get_attachment_metadata( $id );
 
 		$expected = array(
-		 $image['sizes']['medium']['width'] => 'http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
-			 . $image['sizes']['medium']['file'] . ' ' . $image['sizes']['medium']['width'] . 'w',
-		 $image['sizes']['large']['width'] => 'http://example.org/wp-content/uploads/' . $year_month = date('Y/m') . '/'
-			 . $image['sizes']['large']['file'] . ' ' . $image['sizes']['large']['width'] . 'w',
-		 $image['width'] => 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w'
+			array(
+				'url'        => 'http://example.org/wp-content/uploads/' . $year_month . '/' . $image['sizes']['medium']['file'],
+				'descriptor' => 'w',
+				'value'      => $image['sizes']['medium']['width'],
+			),
+			array(
+				'url'        => 'http://example.org/wp-content/uploads/' . $year_month . '/' . $image['sizes']['large']['file'],
+				'descriptor' => 'w',
+				'value'      => $image['sizes']['large']['width'],
+			),
+			array(
+				'url'        => 'http://example.org/wp-content/uploads/' . $image['file'],
+				'descriptor' => 'w',
+				'value'      => $image['width'],
+			),
 		);
 
 		// Set up test cases for all expected size names and a random one.
@@ -791,9 +801,21 @@ EOF;
 		$image = wp_get_attachment_metadata( $id );
 
 		$expected = array(
-			$image['sizes']['medium']['width'] => 'http://example.org/wp-content/uploads/' . $image['sizes']['medium']['file'] . ' ' . $image['sizes']['medium']['width'] . 'w',
-			$image['sizes']['large']['width'] => 'http://example.org/wp-content/uploads/' . $image['sizes']['large']['file'] . ' ' . $image['sizes']['large']['width'] . 'w',
-			$image['width'] => 'http://example.org/wp-content/uploads/' . $image['file'] . ' ' . $image['width'] .'w'
+			array(
+				'url'        => 'http://example.org/wp-content/uploads/' . $image['sizes']['medium']['file'],
+				'descriptor' => 'w',
+				'value'      => $image['sizes']['medium']['width'],
+			),
+			array(
+				'url'        => 'http://example.org/wp-content/uploads/' . $image['sizes']['large']['file'],
+				'descriptor' => 'w',
+				'value'      => $image['sizes']['large']['width'],
+			),
+			array(
+				'url'        => 'http://example.org/wp-content/uploads/' . $image['file'],
+				'descriptor' => 'w',
+				'value'      => $image['width'],
+			),
 		);
 
 		// Set up test cases for all expected size names and a random one.
@@ -837,7 +859,7 @@ EOF;
 
 		// Test to confirm all sources in the array include the same edit hash.
 		foreach ( $sizes as $size ) {
-			$this->assertTrue( false !== strpos( $size, $hash ) );
+			$this->assertTrue( false !== strpos( $size['url'], $hash ) );
 		}
 	}
 

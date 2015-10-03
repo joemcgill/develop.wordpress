@@ -832,7 +832,18 @@ function wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon
  *
  * @param  int    $id   Image attachment ID.
  * @param  string $size Optional. Name of image size. Default value: 'medium'.
- * @return array|bool  An array of image urls and widths or false on failure.
+ * @return array|bool {
+ *     Array image candidate values containing a url, descriptor type, and
+ *     descriptor value. False if none exist.
+ *
+ *     @type array {
+ *        @type string $url        An image 'url'.
+ *        @type string $descriptor A width or density descriptor used in a srcset.
+ *        @type int    $value      The descriptor value representing a width or
+ *                                 or pixel density.
+ *     }
+ * }
+ *
  */
 function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	// Get the intermediate size.
@@ -877,8 +888,11 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 	 */
 	$img_edited = preg_match( '/-e[0-9]{13}/', $img_url, $img_edit_hash );
 
-	// Set up an array to hold the matched image sources.
-	$sources = array();
+	/*
+	 * Set up arrays to hold url candidates and matched image sources so
+	 * we can avoid duplicates without looping through the full sources array
+	 */
+	$candidates = $sources = array();
 
 	/*
 	 * Loop through available images and only use images that are resized
@@ -891,12 +905,21 @@ function wp_attachment_img_srcset_array( $id, $size = 'medium' ) {
 			continue;
 		}
 
+		$candidate_url = path_join( dirname( $img_url ), $img['file'] );
+
 		// Calculate the new image ratio.
 		$img_ratio_compare = $img['height'] / $img['width'];
 
 		// If the new ratio differs by less than 0.01, use it.
-		if ( abs( $img_ratio - $img_ratio_compare ) < 0.01 ) {
-			$sources[ $img['width'] ] = path_join( dirname( $img_url ), $img['file'] ) . ' ' . $img['width'] .'w';
+		if ( abs( $img_ratio - $img_ratio_compare ) < 0.01 && ! in_array( $candidate_url, $candidates ) ) {
+			// Add the URL to our list of candidates.
+			$candidates[] = $candidate_url;
+			// Add the url, descriptor, and value to the sources array to be returned.
+			$sources[] = array(
+					'url'        => $candidate_url,
+					'descriptor' => 'w',
+					'value'      => $img['width'],
+				);
 		}
 	}
 
@@ -927,9 +950,14 @@ function wp_attachment_img_srcset( $id, $size = 'medium' ) {
 	// Only return a srcset value if there is more than one source.
 	if ( count( $srcset_array ) <= 1 ) {
 		return false;
+	} else {
+		$srcset = '';
+		foreach ( $srcset_array as $source ) {
+			$srcset .= $source['url'] . ' ' . $source['value'] . $source['descriptor'] . ', ';
+		}
 	}
 
-	return implode( ', ', $srcset_array );
+	return rtrim( $srcset, ', ');
 }
 
 /**
@@ -1042,7 +1070,6 @@ function wp_attachment_img_sizes( $id, $size = 'medium', $args = null ) {
  * @return string Converted content with 'srcset' and 'sizes' added to images.
  */
 function wp_resp_img( $content ) {
-
 	// Only match images in our uploads directory.
 	$uploads_dir = wp_upload_dir();
 	$path_to_upload_dir = $uploads_dir['baseurl'];
@@ -1069,13 +1096,12 @@ function wp_resp_img( $content ) {
 		 *
 		 * To avoid making a database call for each image, a single query
 		 * warms the object cache with the meta information for all images.
-		 **/
+		 */
 		_prime_post_caches( $ids, false, true );
 	}
 
 	foreach( $matches[0] as $k => $image ) {
 		$match = array( $image, $matches[1][$k] );
-		$needle = $image;
 		$replacement = _wp_resp_img( $match );
 		if ( false === $replacement ) {
 			continue;
@@ -1113,7 +1139,7 @@ function _wp_resp_img( $image ) {
 	if ( $id && false === $size ) {
 		$size = array(
 			$width,
-			$height
+			$height,
 		);
 	}
 
