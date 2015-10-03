@@ -924,7 +924,7 @@ function wp_get_attachment_image_srcset_array( $id, $size = 'medium' ) {
 	}
 
 	/**
-	 * Filter the output of wp_get_srcset_array().
+	 * Filter the output of wp_get_attachment_image_srcset_array().
 	 *
 	 * @since 4.4.0
 	 *
@@ -958,7 +958,7 @@ function wp_get_attachment_image_srcset( $id, $size = 'medium' ) {
 	}
 
 	/**
-	 * Filter the output of wp_get_srcset_array().
+	 * Filter the output of wp_get_attachment_image_srcset().
 	 *
 	 * @since 4.4.0
 	 *
