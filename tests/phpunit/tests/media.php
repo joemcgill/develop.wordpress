@@ -1035,8 +1035,6 @@ EOF;
 		$img_no_size = str_replace( 'size-', '', $img );
 		$img_no_size_id = str_replace( 'wp-image-', 'id-', $img_no_size );
 
-		var_dump( $img );
-
 		// Manually add srcset and sizes to the markup from get_image_tag();
 		$respimg = preg_replace('|<img ([^>]+) />|', '<img $1 ' . $srcset . ' ' . $sizes . ' />', $img);
 		$respimg_no_size = preg_replace('|<img ([^>]+) />|', '<img $1 ' . $srcset . ' ' . $sizes . ' />', $img_no_size);
@@ -1072,7 +1070,6 @@ EOF;
 		$content_unfiltered = sprintf( $content, $img, $img_no_size, $img_no_size_id );
 		$content_filtered = sprintf( $content, $respimg, $respimg_no_size, $img_no_size_id );
 
-		var_dump( $content_filtered );
 		$this->assertSame( $content_filtered, wp_resp_img( $content_unfiltered ) );
 	}
 }
