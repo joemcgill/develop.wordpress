@@ -1081,6 +1081,8 @@ function wp_get_attachment_image_sizes( $id, $size = 'medium', $args = null ) {
 function wp_make_content_images_responsive( $content ) {
 	$images = get_media_embedded_in_content( $content, 'img' );
 
+	$attachment_ids = array();
+	
 	foreach( $images as $image ) {
 		if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
 			(int) $attachment_id = $class_id[1];
