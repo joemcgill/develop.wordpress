@@ -1079,18 +1079,12 @@ function wp_get_attachment_image_sizes( $id, $size = 'medium', $args = null ) {
  * @return string Converted content with 'srcset' and 'sizes' added to images.
  */
 function wp_make_content_images_responsive( $content ) {
-	$images = get_media_embedded_in_content( $content, 'img' );
-
-	$attachment_ids = array();
-	
-	foreach( $images as $image ) {
-		if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
-			(int) $attachment_id = $class_id[1];
-			if ( $attachment_id ) {
-				$attachment_ids[] = $attachment_id;
-			}
-		}
+	if ( ! preg_match_all( '/<img [^>]+ wp-image-([0-9]+)[^>]+>/i', $content, $matches ) ) {
+		return $content;
 	}
+
+	$images = $matches[0];
+	$attachment_ids = array_unique( $matches[1] );
 
 	if ( 0 < count( $attachment_ids ) ) {
 		/*
@@ -3685,9 +3679,9 @@ function get_media_embedded_in_content( $content, $types = null ) {
 	 * @since 4.2.0
 	 *
 	 * @param array $allowed_media_types An array of allowed media types. Default media types are
-	 *                                   'audio', 'video', 'object', 'embed', 'iframe', and 'img'.
+	 *                                   'audio', 'video', 'object', 'embed', and 'iframe'.
 	 */
-	$allowed_media_types = apply_filters( 'media_embedded_in_content_allowed_types', array( 'audio', 'video', 'object', 'embed', 'iframe', 'img' ) );
+	$allowed_media_types = apply_filters( 'media_embedded_in_content_allowed_types', array( 'audio', 'video', 'object', 'embed', 'iframe' ) );
 
 	if ( ! empty( $types ) ) {
 		if ( ! is_array( $types ) ) {
