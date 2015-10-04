@@ -940,22 +940,6 @@ EOF;
 	/**
 	 * @ticket 33641
 	 */
-	function test_tevkori_filter_content_images_with_preexisting_srcset() {
-		// make an image
-		$filename = DIR_TESTDATA . '/images/test-image-large.png';
-		$id = $this->factory->attachment->create_upload_object( $filename );
-
-		// Generate HTML and add a dummy srcset attribute.
-		$image_html = get_image_tag( $id, '', '', '', 'medium' );
-		$image_html = preg_replace('|<img ([^>]+) />|', '<img $1 ' . 'srcset="image2x.jpg 2x" />', $image_html );
-
-		// The content filter should return the image unchanged.
-		$this->assertSame( $image_html, wp_resp_img( $image_html ) );
-	}
-
-	/**
-	 * @ticket 33641
-	 */
 	function test_wp_get_attachment_image_sizes() {
 		// make an image
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
@@ -1018,7 +1002,7 @@ EOF;
 	/**
 	 * @ticket 33641
 	 */
-	function test_filter_wp_get_attachment_image_sizes() {
+	function test_wp_get_attachment_image_sizes_with_filtered_args() {
 		// Add our test filter.
 		add_filter( 'wp_image_sizes_args', array( $this, '_test_wp_image_sizes_args' ) );
 
@@ -1044,9 +1028,8 @@ EOF;
 
 	/**
 	 * @ticket 33641
-	 * @group failing
 	 */
-	function test_tevkori_filter_content_images() {
+	function test_wp_make_content_images_responsive() {
 		// make an image
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
@@ -1094,6 +1077,22 @@ EOF;
 		$content_unfiltered = sprintf( $content, $img, $img_no_size, $img_no_size_id );
 		$content_filtered = sprintf( $content, $respimg, $respimg_no_size, $img_no_size_id );
 
-		$this->assertSame( $content_filtered, wp_resp_img( $content_unfiltered ) );
+		$this->assertSame( $content_filtered, wp_make_content_images_responsive( $content_unfiltered ) );
+	}
+
+	/**
+	 * @ticket 33641
+	 */
+	function test_wp_make_content_images_responsive_with_preexisting_srcset() {
+		// make an image
+		$filename = DIR_TESTDATA . '/images/test-image-large.png';
+		$id = $this->factory->attachment->create_upload_object( $filename );
+
+		// Generate HTML and add a dummy srcset attribute.
+		$image_html = get_image_tag( $id, '', '', '', 'medium' );
+		$image_html = preg_replace('|<img ([^>]+) />|', '<img $1 ' . 'srcset="image2x.jpg 2x" />', $image_html );
+
+		// The content filter should return the image unchanged.
+		$this->assertSame( $image_html, wp_make_content_images_responsive( $image_html ) );
 	}
 }

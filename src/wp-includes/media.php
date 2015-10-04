@@ -1078,72 +1078,54 @@ function wp_get_attachment_image_sizes( $id, $size = 'medium', $args = null ) {
  * @param string $content The raw post content to be filtered.
  * @return string Converted content with 'srcset' and 'sizes' added to images.
  */
-function wp_resp_img( $content ) {
-	// Only match images in our uploads directory.
-	$uploads_dir = wp_upload_dir();
-	$path_to_upload_dir = $uploads_dir['baseurl'];
-
-	// Pattern for matching all images with a `src` from the uploads directory.
-	$pattern = '|<img ([^>]+' . preg_quote( $path_to_upload_dir ) . '[^>]+)>|i';
-	preg_match_all( $pattern, $content, $matches );
-
-	$images = $matches[0];
-	$ids = array();
+function wp_make_content_images_responsive( $content ) {
+	$images = get_media_embedded_in_content( $content, 'img' );
 
 	foreach( $images as $image ) {
 		if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
-			(int) $id = $class_id[1];
-			if ( $id ) {
-				$ids[] = $id;
+			(int) $attachment_id = $class_id[1];
+			if ( $attachment_id ) {
+				$attachment_ids[] = $attachment_id;
 			}
 		}
 	}
 
-	if ( 0 < count( $ids ) ) {
+	if ( 0 < count( $attachment_ids ) ) {
 		/*
 		 * Warm object caches for use with wp_get_attachment_metadata.
 		 *
 		 * To avoid making a database call for each image, a single query
 		 * warms the object cache with the meta information for all images.
 		 */
-		_prime_post_caches( $ids, false, true );
+		_prime_post_caches( $attachment_ids, false, true );
 	}
 
-	foreach( $matches[0] as $k => $image ) {
-		$match = array( $image, $matches[1][$k] );
-		$replacement = _wp_resp_img( $match );
-		if ( false === $replacement ) {
-			continue;
-		}
-		$content = str_replace( $image, $replacement, $content );
+	foreach( $images as $image ) {
+		$content = str_replace( $image, wp_img_add_srcset_and_sizes( $image ), $content );
 	}
 
 	return $content;
 }
 
 /**
- * Private filter callback used in 'wp_resp_img()'
+ * Add srcset and sizes to an 'img' element.
  *
- * @access private
  * @since 4.4.0
+ *
+ * @param string $image An HTML 'img' element to be filtered.
+ * @return string Converted 'img' element with 'srcset' and 'sizes' added.
  */
-function _wp_resp_img( $image ) {
-	if ( empty( $image ) ) {
-		return false;
+function wp_img_add_srcset_and_sizes( $image ) {
+	// Return early if a 'srcset' attribute already exists.
+	if ( false !== strpos( $image, ' srcset="' ) ) {
+		return $image;
 	}
 
-	list( $image_html, $atts ) = $image;
-
-	// Bail early if a 'srcset' attribute already exists.
-	if ( false !== strpos( $atts, 'srcset=' ) ) {
-		return $image_html;
-	}
-
-	// Grab ID and size info from core classes.
-	$id = preg_match( '/wp-image-([0-9]+)/i', $atts, $class_id ) ? (int) $class_id[1] : false;
-	$size = preg_match( '/size-([^\s|"]+)/i', $atts, $class_size ) ? $class_size[1] : false;
-	$width = preg_match( '/ width="([0-9]+)"/', $atts, $atts_width ) ? (int) $atts_width[1] : false;
-	$height = preg_match( '/ height="([0-9]+)"/', $atts, $atts_height ) ? (int) $atts_height[1] : false;
+	// Parse id, size, width, and height from the `img` element.
+	$id = preg_match( '/wp-image-([0-9]+)/i', $image, $match_id ) ? (int) $match_id[1] : false;
+	$size = preg_match( '/size-([^\s|"]+)/i', $image, $match_size ) ? $match_size[1] : false;
+	$width = preg_match( '/ width="([0-9]+)"/', $image, $match_width ) ? (int) $match_width[1] : false;
+	$height = preg_match( '/ height="([0-9]+)"/', $image, $match_height ) ? (int) $match_height[1] : false;
 
 	if ( $id && false === $size ) {
 		$size = array(
@@ -1154,23 +1136,23 @@ function _wp_resp_img( $image ) {
 
 	/*
 	 * If attempts to parse the size value failed, attempt to use the image
-	 * metadata to match the 'src' angainst the available sizes for an attachment.
+	 * metadata to match the 'src' against the available sizes for an attachment.
 	 */
 	if ( ! $size && ! empty( $id ) && $meta = wp_get_attachment_metadata( $id ) ) {
+		// Parse the image `src` value from the `img` element.
+		$src = preg_match( '/src="([^"]+)"/', $image, $match_src ) ? $match_src[1] : false;
 
-		preg_match( '/src="([^"]+)"/', $atts, $url );
-
-		// Sanity check the 'src' value and bail early it doesn't exist.
-		if ( ! $url[1] ) {
-			return $image_html;
+		// Return early if the `src` value is empty.
+		if ( ! $src ) {
+			return $image;
 		}
-
-		$image_filename = basename( $url[1] );
 
 		/*
 		 * First, see if the file is the full size image. If not, we loop through
-		 * the intermediate sizes until we find a match.
+		 * the intermediate sizes until we find a file that matches.
 		 */
+		$image_filename = wp_basename( $src );
+
 		if ( $image_filename === basename( $meta['file'] ) ) {
 			$size = 'full';
 		} else {
@@ -1198,15 +1180,13 @@ function _wp_resp_img( $image ) {
 		$sizes = wp_get_attachment_image_sizes( $id, $size, $args );
 
 		// Format the srcset and sizes string and escape attributes.
-		$srcset_and_sizes = sprintf( 'srcset="%s" sizes="%s"', esc_attr( $srcset ), esc_attr( $sizes) );
+		$srcset_and_sizes = sprintf( ' srcset="%s" sizes="%s"', esc_attr( $srcset ), esc_attr( $sizes) );
 
-		// Strip trailing slashes and whitespace from the '$atts' string.
-		$atts = trim( rtrim( $atts, '/' ) );
-
-		$image_html = "<img " . $atts . " " . $srcset_and_sizes . " />";
+		// Add srcset and sizes attributes to the image markup.
+		$image = preg_replace( '/<img ([^>]+)[\s?][\/?]>/', '<img $1' . $srcset_and_sizes . ' />', $image );
 	};
 
-	return $image_html;
+	return $image;
 }
 
 /**
@@ -3703,9 +3683,9 @@ function get_media_embedded_in_content( $content, $types = null ) {
 	 * @since 4.2.0
 	 *
 	 * @param array $allowed_media_types An array of allowed media types. Default media types are
-	 *                                   'audio', 'video', 'object', 'embed', and 'iframe'.
+	 *                                   'audio', 'video', 'object', 'embed', 'iframe', and 'img'.
 	 */
-	$allowed_media_types = apply_filters( 'media_embedded_in_content_allowed_types', array( 'audio', 'video', 'object', 'embed', 'iframe' ) );
+	$allowed_media_types = apply_filters( 'media_embedded_in_content_allowed_types', array( 'audio', 'video', 'object', 'embed', 'iframe', 'img' ) );
 
 	if ( ! empty( $types ) ) {
 		if ( ! is_array( $types ) ) {
