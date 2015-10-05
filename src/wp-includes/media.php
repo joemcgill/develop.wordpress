@@ -849,7 +849,9 @@ function wp_get_attachment_image_srcset_array( $id, $size = 'medium' ) {
 	// Get the intermediate size.
 	$image = image_get_intermediate_size( $id, $size );
 	// Get the post meta.
-	$img_meta = wp_get_attachment_metadata( $id );
+	if ( ! is_array( $img_meta = wp_get_attachment_metadata( $id ) ) ) {
+		return false;
+	}
 
 	// Extract the height and width from the intermediate or the full size.
 	$img_width = ( $image ) ? $image['width'] : $img_meta['width'];
@@ -1082,7 +1084,7 @@ function wp_make_content_images_responsive( $content ) {
 	$images = get_media_embedded_in_content( $content, 'img' );
 
 	$attachment_ids = array();
-	
+
 	foreach( $images as $image ) {
 		if ( preg_match( '/wp-image-([0-9]+)/i', $image, $class_id ) ) {
 			(int) $attachment_id = $class_id[1];
@@ -1140,7 +1142,7 @@ function wp_img_add_srcset_and_sizes( $image ) {
 	 * If attempts to parse the size value failed, attempt to use the image
 	 * metadata to match the 'src' against the available sizes for an attachment.
 	 */
-	if ( ! $size && ! empty( $id ) && $meta = wp_get_attachment_metadata( $id ) ) {
+	if ( ! $size && ! empty( $id ) && is_array( $meta = wp_get_attachment_metadata( $id ) ) ) {
 		// Parse the image `src` value from the `img` element.
 		$src = preg_match( '/src="([^"]+)"/', $image, $match_src ) ? $match_src[1] : false;
 
