@@ -1024,7 +1024,7 @@ function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $args 
 	/**
 	* Filter arguments used to create 'sizes' attribute.
 	*
-	* @since 2.4.0
+	* @since 4.4.0
 	*
 	* @param array   $args          An array of arguments used to create a 'sizes' attribute.
 	* @param int     $attachment_id Post ID of the original image.
