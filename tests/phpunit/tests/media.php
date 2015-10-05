@@ -792,7 +792,7 @@ EOF;
 		// Disable date organized uploads
 		update_option( 'uploads_use_yearmonth_folders', 0 );
 
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
@@ -865,7 +865,7 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_get_attachment_image_srcset_array_false() {
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 		$sizes = wp_get_attachment_image_srcset_array( 99999, 'foo' );
@@ -886,7 +886,7 @@ EOF;
 		$id = $this->factory->attachment->create_upload_object( $filename );
 		$srcset = wp_get_attachment_image_srcset_array( $id, 'medium' );
 
-		// The srcset should be false
+		// The srcset should be false.
 		$this->assertFalse( $srcset );
 
 		// Remove filter.
@@ -894,7 +894,7 @@ EOF;
 	}
 
 	/**
-	 * Helper funtion to filter image_downsize and return zero values for width and height.
+	 * Helper function to filter image_downsize and return zero values for width and height.
 	 */
 	public function _test_wp_get_attachment_image_srcset_array_no_width_filter( $meta ) {
 		$meta['sizes']['medium']['width'] = 0;
@@ -906,7 +906,7 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_get_attachment_image_srcset() {
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 		$sizes = wp_get_attachment_image_srcset( $id, 'full-size' );
@@ -927,11 +927,13 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_get_attachment_image_srcset_single_srcset() {
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
-		// In our tests, thumbnails will only return a single srcset candidate,
-		// so we shouldn't return a srcset value in order to avoid unneeded markup.
+		/*
+		 * In our tests, thumbnails will only return a single srcset candidate,
+		 * so we shouldn't return a srcset value in order to avoid unneeded markup.
+		 */
 		$sizes = wp_get_attachment_image_srcset( $id, 'thumbnail' );
 
 		$this->assertFalse( $sizes );
@@ -941,20 +943,20 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_get_attachment_image_sizes() {
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
 
 		global $content_width;
 
-		// test sizes against the default WP sizes
+		// Test sizes against the default WP sizes.
 		$intermediates = array('thumbnail', 'medium', 'large');
 
 		foreach( $intermediates as $int ) {
 			$width = get_option( $int . '_size_w' );
 
-			// the sizes width gets constrained to $content_width by default
+			// The sizes width gets constrained to $content_width by default.
 			if ( $content_width > 0 ) {
 				$width = ( $width > $content_width ) ? $content_width : $width;
 			}
@@ -970,7 +972,7 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_get_attachment_image_sizes_with_args() {
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
@@ -1006,7 +1008,7 @@ EOF;
 		// Add our test filter.
 		add_filter( 'wp_image_sizes_args', array( $this, '_test_wp_image_sizes_args' ) );
 
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
@@ -1030,7 +1032,7 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_make_content_images_responsive() {
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
@@ -1084,7 +1086,7 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_make_content_images_responsive_with_preexisting_srcset() {
-		// make an image
+		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
