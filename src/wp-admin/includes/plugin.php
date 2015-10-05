@@ -7,7 +7,7 @@
  */
 
 /**
- * Parse the plugin contents to retrieve plugin's metadata.
+ * Parses the plugin contents to retrieve plugin's metadata.
  *
  * The metadata of the plugin's data searches for the following in the plugin's
  * header. All plugin data must be on its own line. For plugin description, it
@@ -33,20 +33,6 @@
  *    		activated on a single site when Multisite is enabled.
  *      * / # Remove the space to close comment
  *
- * Plugin data returned array contains the following:
- *
- * - 'Name' - Name of the plugin, must be unique.
- * - 'Title' - Title of the plugin and the link to the plugin's web site.
- * - 'Description' - Description of what the plugin does and/or notes
- * - from the author.
- * - 'Author' - The author's name
- * - 'AuthorURI' - The authors web site address.
- * - 'Version' - The plugin version number.
- * - 'PluginURI' - Plugin web site address.
- * - 'TextDomain' - Plugin's text domain for localization.
- * - 'DomainPath' - Plugin's relative directory path to .mo files.
- * - 'Network' - Boolean. Whether the plugin can only be activated network wide.
- *
  * Some users have issues with opening large files and manipulating the contents
  * for want is usually the first 1kiB or 2kiB. This function stops pulling in
  * the plugin contents when it has all of the required plugin data.
@@ -59,15 +45,25 @@
  * the file. This is not checked however and the file is only opened for
  * reading.
  *
- * @link https://core.trac.wordpress.org/ticket/5651 Previous Optimizations.
- * @link https://core.trac.wordpress.org/ticket/7372 Further and better Optimizations.
- *
  * @since 1.5.0
  *
  * @param string $plugin_file Path to the plugin file
- * @param bool $markup Optional. If the returned data should have HTML markup applied. Defaults to true.
- * @param bool $translate Optional. If the returned data should be translated. Defaults to true.
- * @return array See above for description.
+ * @param bool   $markup      Optional. If the returned data should have HTML markup applied.
+ *                            Default true.
+ * @param bool   $translate   Optional. If the returned data should be translated. Default true.
+ * @return array {
+ *     Plugin data. Values will be empty if not supplied by the plugin.
+ *
+ *     @type string $Name        Name of the plugin. Should be unique.
+ *     @type string $Title       Title of the plugin and link to the plugin's site (if set).
+ *     @type string $Description Plugin description.
+ *     @type string $Author      Author's name.
+ *     @type string $AuthorURI   Author's website address (if set).
+ *     @type string $Version     Plugin version.
+ *     @type string $TextDomain  Plugin textdomain.
+ *     @type string $DomainPath  Plugins relative directory path to .mo files.
+ *     @type bool   $Network     Whether the plugin can only be activated network-wide.
+ * }
  */
 function get_plugin_data( $plugin_file, $markup = true, $translate = true ) {
 
@@ -1843,7 +1839,7 @@ function unregister_setting( $option_group, $option_name, $sanitize_callback = '
 }
 
 /**
- * {@internal Missing Short Description}}
+ * Refreshes the value of the options whitelist available via the 'whitelist_options' filter.
  *
  * @since 2.7.0
  *
@@ -1862,7 +1858,7 @@ function option_update_filter( $options ) {
 }
 
 /**
- * {@internal Missing Short Description}}
+ * Adds an array of options to the options whitelist.
  *
  * @since 2.7.0
  *
@@ -1895,7 +1891,7 @@ function add_option_whitelist( $new_options, $options = '' ) {
 }
 
 /**
- * {@internal Missing Short Description}}
+ * Removes a list of options from the options whitelist.
  *
  * @since 2.7.0
  *
