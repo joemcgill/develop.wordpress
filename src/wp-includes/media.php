@@ -992,9 +992,11 @@ function wp_get_attachment_image_srcset( $attachment_id, $size = 'medium' ) {
  */
 function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $args = null ) {
 
-	// Try to get the image width from $args first.
+	// Try to get the image width from $args or $size first.
 	if ( $args && is_numeric( $args['width'] ) ) {
 		$img_width = $args['width'];
+	} elseif ( is_array( $size ) ) {
+		$img_width = $size[0];
 	} elseif ( $img = image_get_intermediate_size( $attachment_id, $size ) ) {
 		list( $img_width, $img_height ) = image_constrain_size_for_editor( $img['width'], $img['height'], $size );
 	}
