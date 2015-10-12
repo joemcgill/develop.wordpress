@@ -781,8 +781,8 @@ function wp_get_attachment_image($attachment_id, $size = 'thumbnail', $icon = fa
 		if ( empty( $attr['srcset'] ) && $srcset = wp_get_attachment_image_srcset( $attachment_id, $size ) ) {
 			$attr['srcset'] = $srcset;
 			
-			if ( empty( $attr['sizes'] ) ) {
-				$attr['sizes'] = wp_get_attachment_image_sizes( $attachment_id, $size, $width );
+			if ( empty( $attr['sizes'] && $sizes = wp_get_attachment_image_sizes( $attachment_id, $size, $width ) ) ) {
+				$attr['sizes'] = $sizes;
 			}
 		}
 
@@ -1128,13 +1128,7 @@ function wp_img_add_srcset_and_sizes( $image ) {
 	}
 
 	// If ID and size, try for 'srcset' and 'sizes' and update the markup.
-	if ( $id && $size && $srcset = wp_get_attachment_image_srcset( $id, $size ) ) {
-
-		/*
-		 * Pass the 'width' to 'wp_get_attachment_image_sizes()' to avoid
-		 * recalculating the image size.
-		 */
-		$sizes = wp_get_attachment_image_sizes( $id, $size, $width );
+	if ( $id && $size && $srcset = wp_get_attachment_image_srcset( $id, $size ) && $sizes = wp_get_attachment_image_sizes( $id, $size, $width ) ) {
 
 		// Format the srcset and sizes string and escape attributes.
 		$srcset_and_sizes = sprintf( ' srcset="%s" sizes="%s"', esc_attr( $srcset ), esc_attr( $sizes) );
