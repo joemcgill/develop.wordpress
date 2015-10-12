@@ -782,11 +782,7 @@ function wp_get_attachment_image($attachment_id, $size = 'thumbnail', $icon = fa
 			$attr['srcset'] = $srcset;
 			
 			if ( empty( $attr['sizes'] ) ) {
-				$sizes_args = array(
-					'width'  => $width,
-					'height' => $height,
-				);
-				$attr['sizes'] = wp_get_attachment_image_sizes( $attachment_id, $size, $sizes_args );
+				$attr['sizes'] = wp_get_attachment_image_sizes( $attachment_id, $size, $width );
 			}
 		}
 
@@ -986,19 +982,20 @@ function wp_get_attachment_image_srcset( $attachment_id, $size = 'medium' ) {
  * @param int          $attachment_id Image attachment ID.
  * @param string|array $size          Optional. Image size name or a flat array
  *                                    of width and height values. Default 'medium'.
- * @param array        $args          Optional. A flat array of width and height values used to
- *                                    create the value of the 'sizes' attribute.
+ * @param int          $width         Optional. A single width value used to
+ *                                    create the default value of the 'sizes' attribute.
  * @return string|bool A valid source size value for use in a 'sizes' attribute or false.
  */
-function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $args = null ) {
+function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $width = null ) {
 
-	// Try to get the image width from $args or $size first.
-	if ( $args && is_numeric( $args['width'] ) ) {
-		$img_width = $args['width'];
+	// Try to get the image width from $width or $size first.
+	if ( $width ) {
+		$img_width = intval( $width );
 	} elseif ( is_array( $size ) ) {
 		$img_width = $size[0];
-	} elseif ( $img = image_get_intermediate_size( $attachment_id, $size ) ) {
-		list( $img_width, $img_height ) = image_constrain_size_for_editor( $img['width'], $img['height'], $size );
+	} else {
+		$img = image_get_intermediate_size( $attachment_id, $size );
+		$img_width = $img['width'];
 	}
 
 	// Bail early if $image_width isn't set.
@@ -1134,15 +1131,10 @@ function wp_img_add_srcset_and_sizes( $image ) {
 	if ( $id && $size && $srcset = wp_get_attachment_image_srcset( $id, $size ) ) {
 
 		/*
-		 * Pass the 'width' and 'height' to 'wp_get_attachment_image_sizes()' to avoid
+		 * Pass the 'width' to 'wp_get_attachment_image_sizes()' to avoid
 		 * recalculating the image size.
 		 */
-		$args = array(
-			'width'  => $width,
-			'height' => $height,
-		);
-
-		$sizes = wp_get_attachment_image_sizes( $id, $size, $args );
+		$sizes = wp_get_attachment_image_sizes( $id, $size, $width );
 
 		// Format the srcset and sizes string and escape attributes.
 		$srcset_and_sizes = sprintf( ' srcset="%s" sizes="%s"', esc_attr( $srcset ), esc_attr( $sizes) );
