@@ -780,11 +780,14 @@ function wp_get_attachment_image($attachment_id, $size = 'thumbnail', $icon = fa
 		// Generate srcset and sizes if not already present.
 		if ( empty( $attr['srcset'] ) && $srcset = wp_get_attachment_image_srcset( $attachment_id, $size ) ) {
 			$attr['srcset'] = $srcset;
-			$sizes_args = array(
-				'height' => $height,
-				'width'  => $width,
-			);
-			$attr['sizes'] = wp_get_attachment_image_sizes( $attachment_id, $size, $sizes_args );
+			
+			if ( empty( $attr['sizes'] ) ) {
+				$sizes_args = array(
+					'height' => $height,
+					'width'  => $width,
+				);
+				$attr['sizes'] = wp_get_attachment_image_sizes( $attachment_id, $size, $sizes_args );
+			}
 		}
 
 		/**
