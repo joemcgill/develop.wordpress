@@ -783,8 +783,8 @@ function wp_get_attachment_image($attachment_id, $size = 'thumbnail', $icon = fa
 			
 			if ( empty( $attr['sizes'] ) ) {
 				$sizes_args = array(
-					'height' => $height,
 					'width'  => $width,
+					'height' => $height,
 				);
 				$attr['sizes'] = wp_get_attachment_image_sizes( $attachment_id, $size, $sizes_args );
 			}
@@ -1185,12 +1185,12 @@ function wp_img_add_srcset_and_sizes( $image ) {
 	if ( $id && $size && $srcset = wp_get_attachment_image_srcset( $id, $size ) ) {
 
 		/*
-		 * Pass the 'height' and 'width' to 'wp_get_attachment_image_sizes()' to avoid
+		 * Pass the 'width' and 'height' to 'wp_get_attachment_image_sizes()' to avoid
 		 * recalculating the image size.
 		 */
 		$args = array(
-			'height' => $height,
 			'width'  => $width,
+			'height' => $height,
 		);
 
 		$sizes = wp_get_attachment_image_sizes( $id, $size, $args );
