@@ -1092,7 +1092,10 @@ function wp_img_add_srcset_and_sizes( $image ) {
 
 	if ( $id && false === $size ) {
 		$height = preg_match( '/ height="([0-9]+)"/', $image, $match_height ) ? (int) $match_height[1] : false;
-		$size = array( $width, $height );
+		
+		if ( $width && $height ) {
+			$size = array( $width, $height );
+		}
 	}
 
 	/*
