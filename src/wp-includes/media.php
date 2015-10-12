@@ -986,19 +986,15 @@ function wp_get_attachment_image_srcset( $attachment_id, $size = 'medium' ) {
  * @param int          $attachment_id Image attachment ID.
  * @param string|array $size          Optional. Image size name or a flat array
  *                                    of width and height values. Default 'medium'.
- * @param array        $args {
- *     Optional. Arguments to retrieve attachments.
- *
- *     @type array|string $sizes An array or string containing of size information.
- *     @type int          $width A single width value used in the default `sizes` string.
- * }
+ * @param array        $args          Optional. A flat array of width and height values used to
+ *                                    create the value of the 'sizes' attribute.
  * @return string|bool A valid source size value for use in a 'sizes' attribute or false.
  */
 function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $args = null ) {
 
 	// Try to get the image width from $args first.
-	if ( is_array( $args ) && ! empty( $args['width'] ) ) {
-		$img_width = (int) $args['width'];
+	if ( $args && is_numeric( $args['width'] ) ) {
+		$img_width = $args['width'];
 	} elseif ( $img = image_get_intermediate_size( $attachment_id, $size ) ) {
 		list( $img_width, $img_height ) = image_constrain_size_for_editor( $img['width'], $img['height'], $size );
 	}
@@ -1008,75 +1004,26 @@ function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $args 
 		return false;
 	}
 
-	// Set the image width in pixels.
-	$img_width = $img_width . 'px';
-
 	// Set up our default values.
-	$defaults = array(
-		'sizes' => array(
-			array(
-				'size_value' => '100vw',
-				'mq_value'   => $img_width,
-				'mq_name'    => 'max-width'
-			),
-			array(
-				'size_value' => $img_width
-			),
-		)
+	$sizes = array(
+		'(max-width: ' . $img_width . 'px) 100vw',
+		$img_width . 'px',
 	);
 
-	$args = wp_parse_args( $args, $defaults );
-
 	/**
-	* Filter arguments used to create 'sizes' attribute.
+	* Filter the values used to create a 'sizes' attribute.
 	*
 	* @since 4.4.0
 	*
-	* @param array        $args          An array of arguments used to create a 'sizes' attribute.
+	* @param array        $sizes         An array of values used to create a 'sizes' attribute.
 	* @param int          $attachment_id Post ID of the original image.
 	* @param string|array $size          Image size name or a flat array of width and height values
 	*                                    of the image being used.
 	*/
-	$args = apply_filters( 'wp_image_sizes_args', $args, $attachment_id, $size );
+	$sizes = apply_filters( 'wp_image_sizes_values', $sizes, $attachment_id, $size );
 
-	// If sizes is passed as a string, just use the string.
-	if ( is_string( $args['sizes'] ) ) {
-		$size_list = $args['sizes'];
-
-	// Otherwise, breakdown the array and build a sizes string.
-	} elseif ( is_array( $args['sizes'] ) ) {
-
-		$size_list = '';
-
-		foreach ( $args['sizes'] as $size ) {
-
-			// Use 100vw as the size value unless something else is specified.
-			$size_value = ( $size['size_value'] ) ? $size['size_value'] : '100vw';
-
-			// If a media length is specified, build the media query.
-			if ( ! empty( $size['mq_value'] ) ) {
-
-				$media_length = $size['mq_value'];
-
-				// Use max-width as the media condition unless min-width is specified.
-				$media_condition = ( ! empty( $size['mq_name'] ) ) ? $size['mq_name'] : 'max-width';
-
-				// If a media_length was set, create the media query.
-				$media_query = '(' . $media_condition . ": " . $media_length . ') ';
-
-			} else {
-				// If no media length was set, $media_query is blank.
-				$media_query = '';
-			}
-
-			// Add to the source size list string.
-			$size_list .= $media_query . $size_value . ', ';
-		}
-
-		// Remove the trailing comma and space from the end of the string.
-		$size_list = substr( $size_list, 0, -2 );
-	}
-
+	$size_list = implode( ', ', $sizes );
+	
 	// Return the sizes value as $size_list or false.
 	return ( $size_list ) ? $size_list : false;
 }
