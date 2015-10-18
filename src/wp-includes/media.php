@@ -1018,8 +1018,10 @@ function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $width
 	* @param int          $attachment_id Post ID of the original image.
 	* @param string|array $size          Image size name or a flat array of width and height values
 	*                                    of the image being used.
+	* @param int          $img_width     The width value used to create the default value
+	*                                    of the 'sizes' attribute.
 	*/
-	$sizes = apply_filters( 'wp_image_sizes_values', $sizes, $attachment_id, $size );
+	$sizes = apply_filters( 'wp_image_sizes_values', $sizes, $attachment_id, $size, $img_width );
 
 	$size_list = implode( ', ', $sizes );
 	
