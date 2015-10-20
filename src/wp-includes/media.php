@@ -815,7 +815,7 @@ function wp_get_attachment_image($attachment_id, $size = 'thumbnail', $icon = fa
 		if ( empty( $attr['srcset'] ) && ( $srcset = wp_get_attachment_image_srcset( $attachment_id, $size ) ) && ( $sizes = wp_get_attachment_image_sizes( $attachment_id, $size, $width ) ) ) {
 			$attr['srcset'] = $srcset;
 
-			if ( empty( $attr['sizes'] ) ) {
+			if ( empty( $attr['sizes'] ) && $sizes = wp_get_attachment_image_sizes( $attachment_id, $size, $width ) ) {
 				$attr['sizes'] = $sizes;
 			}
 		}
