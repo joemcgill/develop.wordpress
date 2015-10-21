@@ -867,7 +867,7 @@ function wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail', $icon
  *
  * @param  int    $attachment_id Image attachment ID.
  * @param  string $size          Optional. Name of image size. Default 'medium'.
- * @return array|bool $images {
+ * @return array|bool $sources {
  *     Array image candidate values containing a URL, descriptor type, and
  *     descriptor value. False if none exist.
  *
