@@ -1169,7 +1169,7 @@ function wp_img_add_srcset_and_sizes( $image ) {
 	// If ID and size exist, try for 'srcset' and 'sizes' and update the markup.
 	if ( $id && $size && ( $srcset = wp_get_attachment_image_srcset( $id, $size ) ) && ( $sizes = wp_get_attachment_image_sizes( $id, $size, $width ) ) ) {
 		// Format the srcset and sizes string and escape attributes.
-		$srcset_and_sizes = sprintf( ' srcset="%s" sizes="%s"', esc_attr( $srcset ), esc_attr( $sizes) );
+		$srcset_and_sizes = sprintf( ' srcset="%s" sizes="%s"', esc_attr( $srcset ), esc_attr( $sizes ) );
 
 		// Add srcset and sizes attributes to the image markup.
 		$image = preg_replace( '/<img ([^>]+)[\s?][\/?]>/', '<img $1' . $srcset_and_sizes . ' />', $image );
