@@ -1159,6 +1159,7 @@ function wp_img_add_srcset_and_sizes( $image ) {
 			foreach( $meta['sizes'] as $image_size => $image_size_data ) {
 				if ( $image_filename === $image_size_data['file'] ) {
 					$size = $image_size;
+					$width = ( $width ) ? $width : $image_size['width'];
 					break;
 				}
 			}
