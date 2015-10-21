@@ -971,32 +971,15 @@ EOF;
 	/**
 	 * @ticket 33641
 	 */
-	function test_wp_get_attachment_image_sizes_with_args() {
+	function test_wp_get_attachment_image_sizes_with_width_param() {
 		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
+		$width = 320;
 
-		$args = array(
-			'sizes' => array(
-				array(
-					'size_value' 	=> '10em',
-					'mq_value'		=> '60em',
-					'mq_name'			=> 'min-width'
-				),
-				array(
-					'size_value' 	=> '20em',
-					'mq_value'		=> '30em',
-					'mq_name'			=> 'min-width'
-				),
-				array(
-					'size_value'	=> 'calc(100vm - 30px)'
-				),
-			)
-		);
-
-		$expected = '(min-width: 60em) 10em, (min-width: 30em) 20em, calc(100vm - 30px)';
-		$sizes = wp_get_attachment_image_sizes( $id, 'medium', $args );
+		$expected = '(max-width: 400px) 100vw, 400px';
+		$sizes = wp_get_attachment_image_sizes( $id, 'medium', $width );
 
 		$this->assertSame($expected, $sizes);
 	}
@@ -1004,28 +987,28 @@ EOF;
 	/**
 	 * @ticket 33641
 	 */
-	function test_wp_get_attachment_image_sizes_with_filtered_args() {
+	function test_wp_get_attachment_image_sizes_with_filter() {
 		// Add our test filter.
-		add_filter( 'wp_image_sizes_args', array( $this, '_test_wp_image_sizes_args' ) );
+		add_filter( 'wp_image_sizes_values', array( $this, '_test_wp_image_sizes_values' ) );
 
 		// Make an image.
 		$filename = DIR_TESTDATA . '/images/test-image-large.png';
 		$id = $this->factory->attachment->create_upload_object( $filename );
 
-		$sizes = wp_get_attachment_image_sizes($id, 'medium');
+		$sizes = wp_get_attachment_image_sizes( $id, 'medium' );
 
 		// Evaluate that the sizes returned is what we expected.
 		$this->assertSame( $sizes, '100vm');
 
-		remove_filter( 'wp_image_sizes_args', array( $this, '_test_wp_image_sizes_args' ) );
+		remove_filter( 'wp_image_sizes_values', array( $this, '_test_wp_image_sizes_values' ) );
 	}
 
 	/**
 	 * A simple test filter for wp_get_attachment_image_sizes().
 	 */
-	function _test_wp_image_sizes_args( $args ) {
-		$args['sizes'] = "100vm";
-		return $args;
+	function _test_wp_image_sizes_values( $sizes ) {
+		$sizes = "100vm";
+		return $sizes;
 	}
 
 	/**
