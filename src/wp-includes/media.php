@@ -1019,7 +1019,8 @@ function wp_get_attachment_image_srcset( $attachment_id, $size = 'medium' ) {
  * @since 4.4.0
  *
  * @param int          $attachment_id Image attachment ID.
- * @param array|string $size          Size of image, either array or string.
+ * @param array|string $size          Image size. Accepts any valid image size, or an array of width and height
+ *                                    values in pixels (in that order). Default 'medium'.
  * @param int          $width         Optional. Display width of the image.
  * @return string|bool A valid source size value for use in a 'sizes' attribute or false.
  */
@@ -1049,10 +1050,11 @@ function wp_get_attachment_image_sizes( $attachment_id, $size = 'medium', $width
 	 *
 	 * @since 4.4.0
 	 *
-	 * @param array   $args          An array of arguments used to create a 'sizes' attribute.
-	 * @param int     $attachment_id Post ID of the original image.
-	 * @param string  $size          Name of the image size being used.
-	 * @param int     $width         Display width of the image.
+	 * @param array        $args          An array of arguments used to create a 'sizes' attribute.
+	 * @param int          $attachment_id Post ID of the original image.
+	 * @param array|string $size          Image size. Accepts any valid image size, or an array of width and height
+	 *                                    values in pixels (in that order). Default 'medium'.
+	 * @param int          $width         Display width of the image.
 	 */
 	return apply_filters( 'wp_get_attachment_image_sizes', $sizes, $attachment_id, $size, $width );
 }
