@@ -812,10 +812,10 @@ function wp_get_attachment_image($attachment_id, $size = 'thumbnail', $icon = fa
 		$attr = wp_parse_args($attr, $default_attr);
 
 		// Generate srcset and sizes if not already present.
-		if ( empty( $attr['srcset'] ) && $srcset = wp_get_attachment_image_srcset( $attachment_id, $size ) ) {
+		if ( empty( $attr['srcset'] ) && $srcset = wp_get_attachment_image_srcset( $attachment_id, $size ) && $sizes = wp_get_attachment_image_sizes( $attachment_id, $size, $width ) ) {
 			$attr['srcset'] = $srcset;
 
-			if ( empty( $attr['sizes'] ) && $sizes = wp_get_attachment_image_sizes( $attachment_id, $size, $width ) ) {
+			if ( empty( $attr['sizes'] ) ) {
 				$attr['sizes'] = $sizes;
 			}
 		}
