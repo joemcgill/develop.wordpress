@@ -895,7 +895,7 @@ function _wp_upload_dir_baseurl() {
  * @since 4.4.0
  * @access private
  *
- * @param string $size_name  Image size. Accepts any valid image size name (thumbnail, medium, etc.).
+ * @param string $size_name  Image size. Accepts any valid image size name ('thumbnail', 'medium', etc.).
  * @param array  $image_meta The image meta data.
  * @return array|bool Array of width and height values in pixels (in that order)
  *                    or false if the size doesn't exist.
@@ -1024,7 +1024,7 @@ function wp_calculate_image_srcset( $image_name, $size_array, $image_meta, $atta
 		return false;
 	}
 
-	// Add full size to the '$img_sizes' array.
+	// Add full size to the '$image_sizes' array.
 	$image_sizes['full'] = array(
 		'width'  => $image_meta['width'],
 		'height' => $image_meta['height'],
@@ -1102,7 +1102,7 @@ function wp_calculate_image_srcset( $image_name, $size_array, $image_meta, $atta
 	 *
 	 * @since 4.4.0
 	 *
-	 * @param array        $sources       An array of image URLs and widths.
+	 * @param array        $sources       An array of image URLs, descriptors, and values.
 	 * @param int          $attachment_id Image attachment ID.
 	 * @param array|string $size          Image size. Image size name, or an array of width and height
 	 *                                    values in pixels (in that order).
