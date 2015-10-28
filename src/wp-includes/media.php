@@ -1135,9 +1135,9 @@ function wp_get_attachment_image_sizes( $size, $image_meta = null, $attachment_i
 		}
 
 		if ( is_array( $image_meta ) ) {
-			$width = _wp_get_image_size_from_meta( $size, $image_meta );
-			if ( $width ) {
-				$width = absint( $width[0] );
+			$size_array = _wp_get_image_size_from_meta( $size, $image_meta );
+			if ( $size_array ) {
+				$width = absint( $size_array[0] );
 			}
 		}
 	}
