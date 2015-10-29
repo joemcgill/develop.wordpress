@@ -736,11 +736,11 @@ EOF;
 	/**
 	 * @ticket 33641
 	 */
-	function test_wp_calculate_image_srcset() {
+	function test_wp_get_attachment_image_srcset() {
 		$year_month = date('Y/m');
 		$image_meta = wp_get_attachment_metadata( self::$large_id );
 
-		$expected = array(
+		$expected_sources = array(
 			array(
 				'url'        => 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . $year_month . '/' . $image_meta['sizes']['medium']['file'],
 				'descriptor' => 'w',
@@ -758,20 +758,29 @@ EOF;
 			),
 		);
 
+		$expected = '';
+
+		foreach ( $expected_sources as $expected_source ) {
+			$expected .= $expected_source['url'] . ' ' . $expected_source['value'] . $expected_source['descriptor'] . ', ';
+		}
+
+		$expected = rtrim( $expected, ', ' );
+
 		// Set up test cases for all expected size names and a random one.
 		$sizes = array( 'medium', 'large', 'full', 'yoav' );
 
 		foreach ( $sizes as $size ) {
-			$image_url = wp_get_attachment_image_url( self::$large_id, $size );
-			$size_array = $this->_get_image_size_array_from_name( $size );
-			$this->assertSame( $expected, wp_calculate_image_srcset( $image_url, $size_array, $image_meta ) );
+			// todo: test with size name/size array, with/without $image_url, with/without $image_meta
+			// $size_array = $this->_get_image_size_array_from_name( $size );
+			// $image_url = wp_get_attachment_image_url( self::$large_id, $size );
+			$this->assertSame( $expected, wp_get_attachment_image_srcset( self::$large_id, $size, $image_url, $image_meta ) );
 		}
 	}
 
 	/**
 	 * @ticket 33641
 	 */
-	function test_wp_calculate_image_srcset_no_date_uploads() {
+	function test_wp_get_attachment_image_srcset_no_date_uploads() {
 		// Save the current setting for uploads folders
 		$uploads_use_yearmonth_folders = get_option( 'uploads_use_yearmonth_folders' );
 
