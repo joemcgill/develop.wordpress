@@ -739,21 +739,38 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_calculate_image_srcset() {
+		global $_wp_additional_image_sizes;
+
 		$year_month = date('Y/m');
 		$image_meta = wp_get_attachment_metadata( self::$large_id );
 		$uploads_dir_url = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/';
 
-		$expected = $uploads_dir_url . $year_month . '/' . $image_meta['sizes']['medium']['file'] . ' ' . $image_meta['sizes']['medium']['width'] . 'w, ' .
-				$uploads_dir_url . $year_month . '/' . $image_meta['sizes']['medium_large']['file'] . ' ' . $image_meta['sizes']['medium_large']['width'] . 'w, ' .
-				$uploads_dir_url . $year_month . '/' . $image_meta['sizes']['large']['file'] . ' ' . $image_meta['sizes']['large']['width'] . 'w, ' .
-				$uploads_dir_url . $image_meta['file'] . ' ' . $image_meta['width'] . 'w';
-
 		// Set up test cases for all expected size names.
-		$sizes = array( 'medium', 'medium_large', 'large', 'full' );
+		$intermediates = array( 'medium', 'medium_large', 'large', 'full' );
 
-		foreach ( $sizes as $size ) {
-			$image_url = wp_get_attachment_image_url( self::$large_id, $size );
-			$size_array = $this->_get_image_size_array_from_name( $size );
+		// Add any soft crop intermediate sizes.
+		foreach ( $_wp_additional_image_sizes as $name => $additional_size ) {
+			if ( ! $_wp_additional_image_sizes[$name]['crop'] || 0 === $_wp_additional_image_sizes[$name]['height'] ) {
+				$intermediates[] = $name;
+			}
+		}
+
+		$expected = "";
+
+		foreach( $image_meta['sizes'] as $name => $size ) {
+			// Whitelist the sizes that should be included so we pick up 'medium_large' in 4.4.
+			if ( in_array( $name, $intermediates ) ) {
+				$expected .= $uploads_dir_url . $year_month . '/' . $size['file'] . ' ' . $size['width'] . 'w, ';
+			}
+		}
+
+		// Add the full size width at the end.
+		$expected .= $uploads_dir_url . $image_meta['file'] . ' ' . $image_meta['width'] .'w';
+
+
+		foreach ( $intermediates as $int ) {
+			$image_url = wp_get_attachment_image_url( self::$large_id, $int );
+			$size_array = $this->_get_image_size_array_from_name( $int );
 			$this->assertSame( $expected, wp_calculate_image_srcset( $size_array, $image_url, $image_meta ) );
 		}
 	}
@@ -762,6 +779,8 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_calculate_image_srcset_no_date_uploads() {
+		global $_wp_additional_image_sizes;
+
 		// Save the current setting for uploads folders
 		$uploads_use_yearmonth_folders = get_option( 'uploads_use_yearmonth_folders' );
 
@@ -775,17 +794,31 @@ EOF;
 		$image_meta = wp_get_attachment_metadata( $id );
 		$uploads_dir_url = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/';
 
-		$expected = $uploads_dir_url . $image_meta['sizes']['medium']['file'] . ' ' . $image_meta['sizes']['medium']['width'] . 'w, ' .
-				$uploads_dir_url . $image_meta['sizes']['medium_large']['file'] . ' ' . $image_meta['sizes']['medium_large']['width'] . 'w, ' .
-				$uploads_dir_url . $image_meta['sizes']['large']['file'] . ' ' . $image_meta['sizes']['large']['width'] . 'w, ' .
-				$uploads_dir_url . $image_meta['file'] . ' ' . $image_meta['width'] . 'w';
-
 		// Set up test cases for all expected size names.
-		$sizes = array( 'medium', 'medium_large', 'large', 'full' );
+		$intermediates = array( 'medium', 'medium_large', 'large', 'full' );
 
-		foreach ( $sizes as $size ) {
-			$size_array = $this->_get_image_size_array_from_name( $size );
-			$image_url = wp_get_attachment_image_url( $id, $size );
+		foreach ( $_wp_additional_image_sizes as $name => $additional_size ) {
+			if ( ! $_wp_additional_image_sizes[$name]['crop'] || 0 === $_wp_additional_image_sizes[$name]['height'] ) {
+				$intermediates[] = $name;
+			}
+		}
+
+
+		$expected = "";
+
+		foreach( $image_meta['sizes'] as $name => $size ) {
+			// Whitelist the sizes that should be included so we pick up 'medium_large' in 4.4.
+			if ( in_array( $name, $intermediates ) ) {
+				$expected .= $uploads_dir_url . $size['file'] . ' ' . $size['width'] . 'w, ';
+			}
+		}
+
+		// Add the full size width at the end.
+		$expected .= $uploads_dir_url . $image_meta['file'] . ' ' . $image_meta['width'] .'w';
+
+		foreach ( $intermediates as $int ) {
+			$size_array = $this->_get_image_size_array_from_name( $int );
+			$image_url = wp_get_attachment_image_url( $id, $int );
 			$this->assertSame( $expected, wp_calculate_image_srcset( $size_array, $image_url, $image_meta ) );
 		}
 
@@ -859,20 +892,37 @@ EOF;
 	 * @ticket 33641
 	 */
 	function test_wp_get_attachment_image_srcset() {
+		global $_wp_additional_image_sizes;
+
 		$image_meta = wp_get_attachment_metadata( self::$large_id );
 		$size_array = array( 1600, 1200 ); // full size
 
 		$srcset = wp_get_attachment_image_srcset( self::$large_id, $size_array, $image_meta );
 
 		$year_month = date('Y/m');
+		$uploads_dir = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/';
 
-		$expected = 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . $year_month = date('Y/m') . '/'
-			. $image_meta['sizes']['medium']['file'] . ' ' . $image_meta['sizes']['medium']['width'] . 'w, ';
-		$expected .= 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . $year_month = date('Y/m') . '/'
-			. $image_meta['sizes']['medium_large']['file'] . ' ' . $image_meta['sizes']['medium_large']['width'] . 'w, ';
-		$expected .= 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . $year_month = date('Y/m') . '/'
-			. $image_meta['sizes']['large']['file'] . ' ' . $image_meta['sizes']['large']['width'] . 'w, ';
-		$expected .= 'http://' . WP_TESTS_DOMAIN . '/wp-content/uploads/' . $image_meta['file'] . ' ' . $image_meta['width'] .'w';
+		// Set up test cases for all expected size names.
+		$get_intermediate_image_sizes = get_intermediate_image_sizes();
+		$intermediates = array( 'medium', 'medium_large', 'large', 'full' );
+
+		foreach ( $_wp_additional_image_sizes as $name => $additional_size ) {
+			if ( ! $_wp_additional_image_sizes[$name]['crop'] || 0 === $_wp_additional_image_sizes[$name]['height'] ) {
+				$intermediates[] = $name;
+			}
+		}
+
+		$expected = "";
+
+		foreach( $image_meta['sizes'] as $name => $size ) {
+			// Whitelist the sizes that should be included so we pick up 'medium_large' in 4.4.
+			if ( in_array( $name, $intermediates ) ) {
+				$expected .= $uploads_dir . $year_month . '/' . $size['file'] . ' ' . $size['width'] . 'w, ';
+			}
+		}
+
+
+		$expected .= $uploads_dir . $image_meta['file'] . ' ' . $image_meta['width'] .'w';
 
 		$this->assertSame( $expected, $srcset );
 	}
@@ -915,6 +965,9 @@ EOF;
 		// Test sizes against the default WP sizes.
 		$intermediates = array('thumbnail', 'medium', 'medium_large', 'large');
 
+		// Make sure themes aren't filtering the sizes array.
+		remove_all_filters( 'wp_calculate_image_sizes' );
+
 		foreach( $intermediates as $int_size ) {
 			$image = wp_get_attachment_image_src( self::$large_id, $int_size );
 
@@ -932,6 +985,9 @@ EOF;
 		// Test sizes against the default WP sizes.
 		$intermediates = array('thumbnail', 'medium', 'medium_large', 'large');
 		$image_meta = wp_get_attachment_metadata( self::$large_id );
+
+		// Make sure themes aren't filtering the sizes array.
+		remove_all_filters( 'wp_calculate_image_sizes' );
 
 		foreach( $intermediates as $int_size ) {
 			$size_array = $this->_get_image_size_array_from_name( $int_size );
