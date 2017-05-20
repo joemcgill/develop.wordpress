@@ -183,7 +183,27 @@ function image_hwstring( $width, $height ) {
  *                     the image is an intermediate size. False on failure.
  */
 function image_downsize( $id, $size = 'medium' ) {
-	$is_image = wp_attachment_is_image( $id );
+	$is_image = false;
+
+	/*
+	 * Check attachment to see if we support returning image attributes for
+	 * this type. This is to avoid the 'image_downsize' filter and making
+	 * unneeded DB queries when the type is unsupported.
+	 */
+	$supported = false;
+	$supported_types = array( 'image', 'pdf' );
+
+	foreach ( $supported_types as $type ) {
+		$supported = wp_attachment_is( $type, $id );
+		if ( $supported ) {
+			$is_image = ( 'image' === $type );
+			break;
+		}
+	}
+
+	if ( ! $supported ) {
+		return false;
+	}
 
 	/**
 	 * Filters whether to preempt the output of image_downsize().
