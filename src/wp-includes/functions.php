@@ -2019,7 +2019,7 @@ function _wp_upload_dir( $time = null ) {
 /**
  * Assign a new extension to a filename.
  *
- * @since 4.7.4
+ * @since 4.8.1
  *
  * @param string $filename The original filename.
  * @param string $ext      The new extension.
@@ -2615,7 +2615,7 @@ function wp_get_ext_types() {
  * get_allowed_mime_types, each entry consists of a single file extension
  * with multiple MIME types.
  *
- * @since 4.7.4
+ * @since 4.8.1
  *
  * @return array Array of mime types keyed by the file extension corresponding
  *               to those types.
@@ -2662,7 +2662,7 @@ function get_greylisted_mime_types() {
 	/**
 	 * Filters the greylist results.
 	 *
-	 * @since 4.7.4
+	 * @since 4.8.1
 	 *
 	 * @param array $greylist Array of mime types keyed by the file extension corresponding
 	 *                        to those types.
