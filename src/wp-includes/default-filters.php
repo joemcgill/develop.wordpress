@@ -456,6 +456,7 @@ add_filter( 'the_content', 'do_shortcode', 11 ); // AFTER wpautop()
 // Media
 add_action( 'wp_playlist_scripts', 'wp_playlist_scripts' );
 add_action( 'customize_controls_enqueue_scripts', 'wp_plupload_default_settings' );
+add_action( 'wp_generate_custom_images', 'wp_generate_attachment_sizes' );
 
 // Nav menu
 add_filter( 'nav_menu_item_id', '_nav_menu_item_id_use_once', 10, 2 );

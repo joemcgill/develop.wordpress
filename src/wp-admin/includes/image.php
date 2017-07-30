@@ -86,55 +86,25 @@ function wp_generate_attachment_metadata( $attachment_id, $file ) {
 		// Make the file path relative to the upload dir.
 		$metadata['file'] = _wp_relative_upload_path($file);
 
-		// Make thumbnails and other intermediate sizes.
-		$_wp_additional_image_sizes = wp_get_additional_image_sizes();
+		// Get default registered sizes.
+		$image_sizes = array( 'thumbnail', 'medium', 'medium_large', 'large' );
 
-		$sizes = array();
-		foreach ( get_intermediate_image_sizes() as $s ) {
-			$sizes[$s] = array( 'width' => '', 'height' => '', 'crop' => false );
-			if ( isset( $_wp_additional_image_sizes[$s]['width'] ) ) {
-				// For theme-added sizes
-				$sizes[$s]['width'] = intval( $_wp_additional_image_sizes[$s]['width'] );
-			} else {
-				// For default sizes set in options
-				$sizes[$s]['width'] = get_option( "{$s}_size_w" );
-			}
-
-			if ( isset( $_wp_additional_image_sizes[$s]['height'] ) ) {
-				// For theme-added sizes
-				$sizes[$s]['height'] = intval( $_wp_additional_image_sizes[$s]['height'] );
-			} else {
-				// For default sizes set in options
-				$sizes[$s]['height'] = get_option( "{$s}_size_h" );
-			}
-
-			if ( isset( $_wp_additional_image_sizes[$s]['crop'] ) ) {
-				// For theme-added sizes
-				$sizes[$s]['crop'] = $_wp_additional_image_sizes[$s]['crop'];
-			} else {
-				// For default sizes set in options
-				$sizes[$s]['crop'] = get_option( "{$s}_crop" );
-			}
+		// If current theme supports post-thumbnails, generate that now too.
+		if ( current_theme_supports( 'post-thumbnails' ) ) {
+			$image_sizes[] = 'post-thumbnail';
 		}
 
-		/**
-		 * Filters the image sizes automatically generated when uploading an image.
-		 *
-		 * @since 2.9.0
-		 * @since 4.4.0 Added the `$metadata` argument.
-		 *
-		 * @param array $sizes    An associative array of image sizes.
-		 * @param array $metadata An associative array of image metadata: width, height, file.
+		// Make default intermediate image sizes.
+		$metadata['sizes'] = wp_make_intermediate_images( $file, $image_sizes );
+
+		/*
+		 * Schedule creation of additional registered images if there are any.
+		 * This uses a short time offset to ensure the initial data has completed.
 		 */
-		$sizes = apply_filters( 'intermediate_image_sizes_advanced', $sizes, $metadata );
-
-		if ( $sizes ) {
-			$editor = wp_get_image_editor( $file );
-
-			if ( ! is_wp_error( $editor ) )
-				$metadata['sizes'] = $editor->multi_resize( $sizes );
-		} else {
-			$metadata['sizes'] = array();
+		$registered_sizes = get_intermediate_image_sizes();
+		
+		if ( count( $registered_sizes > count( $image_sizes ) ) ) {
+			wp_schedule_single_event( time() + 15, 'wp_generate_custom_images', array( $attachment_id ) );
 		}
 
 		// Fetch additional metadata from EXIF/IPTC.
@@ -290,6 +260,139 @@ function wp_generate_attachment_metadata( $attachment_id, $file ) {
 	 * @param int   $attachment_id Current attachment ID.
 	 */
 	return apply_filters( 'wp_generate_attachment_metadata', $metadata, $attachment_id );
+}
+
+/**
+ * Generate intermediate images for a specific attachment.
+ *
+ * @since 4.9.0
+ *
+ * @param int $attachment_id An attachment post ID.
+ * @return array|false Attachment metadata. False on failure.
+ */
+function wp_generate_attachment_sizes( $attachment_id ) {
+	$attachment = get_post( $attachment_id );
+
+	if ( ! $attachment ) {
+		return false;
+	}
+
+	$file = get_attached_file( $attachment_id );
+	$metatdata = wp_get_attachment_metadata( $attachment_id );
+
+	$sizes = ( isset( $metatdata['sizes'] ) ) ? $metatdata['sizes'] : array();
+
+	$missing_sizes = array_diff( get_intermediate_image_sizes(), array_keys( $sizes ) );
+
+	// Generate images for any missing sizes.
+	$new_sizes = wp_make_intermediate_images( $file, $missing_sizes );
+
+	// Only update the database if new sizes have been created.
+	if ( ! empty( $new_sizes ) ) {
+		$metadata['sizes'] = array_merge( $sizes, $new_sizes );
+
+		$success = wp_update_attachment_metadata( $attachment_id, $metadata );
+
+		// Return false if the update was unsuccessful.
+		if ( ! $success ) {
+			return false;
+		}
+	}
+
+	return $metatdata;
+}
+
+/**
+ * Generate internmedate image files.
+ *
+ * @since 4.9.0
+ *
+ * @param sting $file       Path to an image file.
+ * @param array $size_names Optional. An array of intermediate size names to generate.
+ *                          If not set, will generate all registered sizes.
+ * @return array An associative array of image sizes, including width, height, crop, and file.
+ */
+function wp_make_intermediate_images( $file, $size_names = array() ) {
+	$registered_sizes = get_intermediate_image_sizes();
+
+	/*
+	 * Limit size names to registered values only.
+	 * If no names are passed, used all registered sizes.
+	 */
+	if ( ! empty( $size_names ) ) {
+		$size_names = array_intersect( $size_names, $registered_sizes );
+	} else {
+		$size_names = $registered_sizes;
+	}
+
+	// Make thumbnails and other intermediate sizes.
+	$_wp_additional_image_sizes = wp_get_additional_image_sizes();
+
+	foreach ( $size_names as $s ) {
+		$sizes[$s] = array( 'width' => '', 'height' => '', 'crop' => false );
+		if ( isset( $_wp_additional_image_sizes[$s]['width'] ) ) {
+			// For theme-added sizes
+			$sizes[$s]['width'] = intval( $_wp_additional_image_sizes[$s]['width'] );
+		} else {
+			// For default sizes set in options
+			$sizes[$s]['width'] = get_option( "{$s}_size_w" );
+		}
+
+		if ( isset( $_wp_additional_image_sizes[$s]['height'] ) ) {
+			// For theme-added sizes
+			$sizes[$s]['height'] = intval( $_wp_additional_image_sizes[$s]['height'] );
+		} else {
+			// For default sizes set in options
+			$sizes[$s]['height'] = get_option( "{$s}_size_h" );
+		}
+
+		if ( isset( $_wp_additional_image_sizes[$s]['crop'] ) ) {
+			// For theme-added sizes
+			$sizes[$s]['crop'] = $_wp_additional_image_sizes[$s]['crop'];
+		} else {
+			// For default sizes set in options
+			$sizes[$s]['crop'] = get_option( "{$s}_crop" );
+		}
+	}
+
+	/*
+	 * For backward compatibility with pre-4.9 behavior, if something is hooked to
+	 * the 'intermediate_image_sizes_advanced' filter, we need to construct the
+	 * expected '$metadata' array. If not, avoiding the extra overhead is better.
+	 */
+	if ( has_filter( 'intermediate_image_sizes_advanced' ) ) {
+		$metadata = array();
+
+		$imagesize = getimagesize( $file );
+		$metadata['width'] = $imagesize[0];
+		$metadata['height'] = $imagesize[1];
+
+		// Make the file path relative to the upload dir.
+		$metadata['file'] = _wp_relative_upload_path($file);
+
+		/**
+		 * Filters the image sizes automatically generated when uploading an image.
+		 *
+		 * @since 2.9.0
+		 * @since 4.4.0 Added the `$metadata` argument.
+		 *
+		 * @param array $sizes    An associative array of image sizes.
+		 * @param array $metadata An associative array of image metadata: width, height, file.
+		 */
+		$sizes = apply_filters( 'intermediate_image_sizes_advanced', $sizes, $metadata );
+	}
+
+	$size_data = array();
+
+	if ( $sizes ) {
+		$editor = wp_get_image_editor( $file );
+
+		if ( ! is_wp_error( $editor ) ) {
+			$size_data = $editor->multi_resize( $sizes );
+		}
+	}
+
+	return $size_data;
 }
 
 /**
