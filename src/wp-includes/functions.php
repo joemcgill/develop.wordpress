@@ -2023,6 +2023,35 @@ function _wp_upload_dir( $time = null ) {
 }
 
 /**
+ * Assign a new extension to a filename.
+ *
+ * @since 4.8.1
+ *
+ * @param string $filename The original filename.
+ * @param string $ext      The new extension.
+ * @return string The renamed file.
+ */
+function wp_update_filename_extension( $filename, $ext ) {
+	$ext = strtolower( $ext );
+	$ext = rtrim( $ext, '.' );
+	$ext = ltrim( $ext, '.' );
+
+	$filename_parts = explode( '.', $filename );
+
+	// Remove the old extension.
+	if ( count( $filename_parts ) > 1 ) {
+		array_pop( $filename_parts );
+	}
+
+	// Add the new extension.
+	if ( strlen( $ext ) ) {
+		$filename_parts[] = $ext;
+	}
+
+	return implode( '.', $filename_parts );
+}
+
+/**
  * Get a filename that is sanitized and unique for the given directory.
  *
  * If the filename is not unique, then a number will be added to the filename
@@ -2267,12 +2296,12 @@ function wp_check_filetype( $filename, $mimes = null ) {
 function wp_check_filetype_and_ext( $file, $filename, $mimes = null ) {
 	$proper_filename = false;
 
-	// Do basic extension validation and MIME mapping
+	// Do basic extension validation and MIME mapping.
 	$wp_filetype = wp_check_filetype( $filename, $mimes );
 	$ext = $wp_filetype['ext'];
 	$type = $wp_filetype['type'];
 
-	// We can't do any further validation without a file to work with
+	// We can't do any further validation without a file to work with.
 	if ( ! file_exists( $file ) ) {
 		return compact( 'ext', 'type', 'proper_filename' );
 	}
@@ -2282,7 +2311,7 @@ function wp_check_filetype_and_ext( $file, $filename, $mimes = null ) {
 	// Validate image types.
 	if ( $type && 0 === strpos( $type, 'image/' ) ) {
 
-		// Attempt to figure out what type of image it actually is
+		// Attempt to figure out what type of image it actually is.
 		$real_mime = wp_get_image_mime( $file );
 
 		if ( $real_mime && $real_mime != $type ) {
@@ -2294,22 +2323,20 @@ function wp_check_filetype_and_ext( $file, $filename, $mimes = null ) {
 			 * @param  array $mime_to_ext Array of image mime types and their matching extensions.
 			 */
 			$mime_to_ext = apply_filters( 'getimagesize_mimes_to_exts', array(
-				'image/jpeg' => 'jpg',
-				'image/png'  => 'png',
-				'image/gif'  => 'gif',
-				'image/bmp'  => 'bmp',
-				'image/tiff' => 'tif',
+				'image/jpeg'      => 'jpg',
+				'image/png'       => 'png',
+				'image/gif'       => 'gif',
+				'image/bmp'       => 'bmp',
+				'image/x-ms-bmp'  => 'bmp',
+				'image/tiff'      => 'tif',
 			) );
 
-			// Replace whatever is after the last period in the filename with the correct extension
+			// Rename the file with the correct extension.
 			if ( ! empty( $mime_to_ext[ $real_mime ] ) ) {
-				$filename_parts = explode( '.', $filename );
-				array_pop( $filename_parts );
-				$filename_parts[] = $mime_to_ext[ $real_mime ];
-				$new_filename = implode( '.', $filename_parts );
+				$new_filename = wp_update_filename_extension( $filename, $mime_to_ext[ $real_mime ] );
 
 				if ( $new_filename != $filename ) {
-					$proper_filename = $new_filename; // Mark that it changed
+					$proper_filename = $new_filename; // Mark that it changed.
 				}
 				// Redefine the extension / MIME
 				$wp_filetype = wp_check_filetype( $new_filename, $mimes );
@@ -2323,21 +2350,63 @@ function wp_check_filetype_and_ext( $file, $filename, $mimes = null ) {
 	}
 
 	// Validate files that didn't get validated during previous checks.
-	if ( $type && ! $real_mime && extension_loaded( 'fileinfo' ) ) {
+	if (
+		$type &&
+		! $real_mime &&
+		extension_loaded( 'fileinfo' ) &&
+		defined( 'FILEINFO_MIME_TYPE' )
+	) {
 		$finfo = finfo_open( FILEINFO_MIME_TYPE );
 		$real_mime = finfo_file( $finfo, $file );
 		finfo_close( $finfo );
 
 		/*
 		 * If $real_mime doesn't match what we're expecting, we need to do some extra
-		 * vetting of application mime types to make sure this type of file is allowed.
+		 * vetting of greylisted mime types to make sure this type of file is allowed.
 		 * Other mime types are assumed to be safe, but should be considered unverified.
 		 */
-		if ( $real_mime && ( $real_mime !== $type ) && ( 0 === strpos( $real_mime, 'application' ) ) ) {
-			$allowed = get_allowed_mime_types();
+		if ( $real_mime && ( $real_mime !== $type ) ) {
+			// Get the true file extension for a greylisted filetype.
+			$greylist = get_greylisted_mime_types();
+			$real_mime = strtolower( sanitize_mime_type( $real_mime ) );
+			$real_ext = false;
+			foreach ( $greylist as $exts => $greylist_types ) {
+				if ( in_array( $real_mime, $greylist_types, true ) ) {
+					$real_ext = $exts;
+					break;
+				}
+			}
 
-			if ( ! in_array( $real_mime, $allowed ) ) {
-				$type = $ext = false;
+			if ( $real_ext ) {
+				// This MIME type is greylisted, so make sure the extension is allowed.
+				$allowed = get_allowed_mime_types();
+				$found = false;
+				foreach ( $allowed as $exts => $allowed_type ) {
+					$exts = explode( '|', $exts );
+					if ( in_array( $real_ext, $exts, true ) ) {
+						// Rename the file with the correct extension.
+						if ( $ext !== $real_ext ) {
+							$new_filename = wp_update_filename_extension( $filename, $real_ext );
+
+							if ( $new_filename != $filename ) {
+								$proper_filename = $new_filename; // Mark that it changed.
+							}
+
+							$ext = $real_ext;
+						}
+
+						// Always prefer the MIME type from get_allowed_mimes().
+						$type = $allowed_type;
+
+						$found = true;
+						break;
+					}
+				}
+
+				// Unauthorized file.
+				if ( ! $found ) {
+					$ext = $type = false;
+				}
 			}
 		}
 	}
@@ -2543,6 +2612,68 @@ function wp_get_ext_types() {
 		'archive'     => array( 'bz2', 'cab',  'dmg',  'gz',   'rar',  'sea',   'sit',  'sqx',  'tar',  'tgz',  'zip', '7z' ),
 		'code'        => array( 'css', 'htm',  'html', 'php',  'js' ),
 	) );
+}
+
+/**
+ * Retrieve list of greylisted mime types and file extensions.
+ *
+ * These are file types deserving of extra validation during uploads. Unlike
+ * get_allowed_mime_types, each entry consists of a single file extension
+ * with multiple MIME types.
+ *
+ * @since 4.8.1
+ *
+ * @return array Array of mime types keyed by the file extension corresponding
+ *               to those types.
+ */
+function get_greylisted_mime_types() {
+	$greylist = array(
+		'air' => array(
+			'application/adobe.air-application-installer-package+zip',
+			'application/vnd.adobe.air-application-installer-package+zip',
+			'application/x-adobe.air-application-installer-package+zip',
+		),
+		'flv' => array(
+			'application/flash-video',
+			'application/vnd.flash-video',
+			'application/x-flash-video',
+			'flv-application/octet-stream',
+			'video/flv',
+			'video/x-flv',
+		),
+		'swf' => array(
+			'application/adobe.flash.movie',
+			'application/futuresplash',
+			'application/shockwave-flash',
+			'application/vnd.adobe.flash.movie',
+			'application/vnd.futuresplash',
+			'application/vnd.shockwave-flash',
+			'application/x-adobe.flash.movie',
+			'application/x-futuresplash',
+			'application/x-shockwave-flash',
+		),
+		'spl' => array(
+			'application/adobe.flash.movie',
+			'application/futuresplash',
+			'application/shockwave-flash',
+			'application/vnd.adobe.flash.movie',
+			'application/vnd.futuresplash',
+			'application/vnd.shockwave-flash',
+			'application/x-adobe.flash.movie',
+			'application/x-futuresplash',
+			'application/x-shockwave-flash',
+		),
+	);
+
+	/**
+	 * Filters the greylist results.
+	 *
+	 * @since 4.8.1
+	 *
+	 * @param array $greylist Array of mime types keyed by the file extension corresponding
+	 *                        to those types.
+	 */
+	return apply_filters( 'get_greylisted_mime_types', $greylist );
 }
 
 /**

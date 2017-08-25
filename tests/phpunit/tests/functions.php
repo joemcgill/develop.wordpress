@@ -122,6 +122,13 @@ class Tests_Functions extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * @dataProvider _wp_update_filename_extension
+	 */
+	function test_wp_update_filename_extension( $filename, $ext, $expected ) {
+		$this->assertEquals( $expected, wp_update_filename_extension( $filename, $ext ) );
+	}
+
 	function test_wp_unique_filename() {
 
 		$testdir = DIR_TESTDATA . '/images/';
@@ -994,6 +1001,27 @@ class Tests_Functions extends WP_UnitTestCase {
 	}
 
 	/**
+	 * @ticket 39550
+	 *
+	 * @dataProvider _wp_check_filetype_and_ext_with_filtered_swf
+	 */
+	function test_wp_check_filetype_and_ext_with_filtered_swf( $file, $filename, $expected ) {
+		if ( ! extension_loaded( 'fileinfo' ) ) {
+			$this->markTestSkipped( 'The fileinfo PHP extension is not loaded.' );
+		}
+
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Test does not run in multisite' );
+		}
+
+		add_filter( 'upload_mimes', array( $this, '_filter_mime_types_swf' ) );
+		$this->assertEquals( $expected, wp_check_filetype_and_ext( $file, $filename ) );
+
+		// Cleanup.
+		remove_filter( 'upload_mimes', array( $this, '_test_add_mime_types_swf' ) );
+	}
+
+	/**
 	 * Data profider for test_wp_get_image_mime();
 	 */
 	public function _wp_get_image_mime() {
@@ -1080,6 +1108,26 @@ class Tests_Functions extends WP_UnitTestCase {
 					'proper_filename' => false,
 				),
 			),
+			// Flash file with invalid extension.
+			array(
+				DIR_TESTDATA . '/uploads/test.swf',
+				'big5.jpg',
+				array(
+					'ext' => false,
+					'type' => false,
+					'proper_filename' => false,
+				),
+			),
+			// Flash file with valid extension.
+			array(
+				DIR_TESTDATA . '/uploads/test.swf',
+				'test.swf',
+				array(
+					'ext' => false,
+					'type' => false,
+					'proper_filename' => false,
+				),
+			),
 		);
 
 		// Test a few additional file types on single sites.
@@ -1107,6 +1155,65 @@ class Tests_Functions extends WP_UnitTestCase {
 				),
 			) );
 		}
+
+		return $data;
+	}
+
+	public function _filter_mime_types_swf( $mimes ) {
+		$mimes['swf'] = 'application/x-shockwave-flash';
+		return $mimes;
+	}
+
+	public function _wp_update_filename_extension() {
+		$data = array(
+			array(
+				'test.jpg',
+				'png',
+				'test.png',
+			),
+			array(
+				'test',
+				'png',
+				'test.png',
+			),
+			array(
+				'test',
+				'.png',
+				'test.png',
+			),
+			array(
+				'test.jpg',
+				'',
+				'test',
+			),
+		);
+
+		return $data;
+	}
+
+	public function _wp_check_filetype_and_ext_with_filtered_swf() {
+		$data = array(
+			// Correctly named SWF.
+			array(
+				DIR_TESTDATA . '/uploads/test.swf',
+				'test.swf',
+				array(
+					'ext' => 'swf',
+					'type' => 'application/x-shockwave-flash',
+					'proper_filename' => false,
+				),
+			),
+			// Incorrectly named SWF.
+			array(
+				DIR_TESTDATA . '/uploads/test.swf',
+				'test.jpg',
+				array(
+					'ext' => 'swf',
+					'type' => 'application/x-shockwave-flash',
+					'proper_filename' => 'test.swf',
+				),
+			),
+		);
 
 		return $data;
 	}
