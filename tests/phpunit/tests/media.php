@@ -64,12 +64,17 @@ CAP;
 	 * @ticket 33981
 	 */
 	function test_img_caption_shortcode_short_circuit_filter() {
-		add_filter( 'img_caption_shortcode', function() {
-			return $this->alternate_caption;
-		});
+		add_filter( 'img_caption_shortcode', array( $this, '_return_alt_caption' ) );
 
 		$result = img_caption_shortcode( array(), $this->caption );
 		$this->assertEquals( $this->alternate_caption, $result );
+	}
+
+	/**
+	 * Filter used in test_img_caption_shortcode_short_circuit_filter()
+	 */
+	function _return_alt_caption() {
+		return $this->alternate_caption;
 	}
 
 	/**
