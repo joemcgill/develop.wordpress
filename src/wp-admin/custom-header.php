@@ -1197,11 +1197,13 @@ wp_nonce_field( 'custom-header-options', '_wpnonce-custom-header-options' ); ?>
 		 * @param array $metadata Attachment metadata.
 		 */
 		$metadata = apply_filters( 'wp_header_image_attachment_metadata', $metadata );
-		wp_update_attachment_metadata( $attachment_id, $metadata );
 
+		// If this is a crop, save the original attachment ID as metadata.
 		if ( $parent_id ) {
-			$meta = add_post_meta( $attachment_id, '_wp_attachment_parent', $parent_id, true );
+			$metadata['attachment_parent'] = $parent_id;
 		}
+
+		wp_update_attachment_metadata( $attachment_id, $metadata );
 
 		return $attachment_id;
 	}
